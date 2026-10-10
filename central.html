@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#c8102e">
+<title>ALICORP · Sistema Central de Reposición</title>
+<style>
+:root{--r:#c8102e;--r2:#8f0b22;--bg:#f4f6f8;--txt:#1f2937;--mut:#6b7280}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt)}
+header{background:linear-gradient(135deg,var(--r),var(--r2));color:#fff;padding:16px}
+.head{max-width:1000px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+h1{margin:0;font-size:20px}.sub{font-size:12px;opacity:.9;margin-top:3px}
+.wrap{max-width:1000px;margin:16px auto;padding:0 10px}.card{background:#fff;border-radius:14px;padding:15px;box-shadow:0 4px 18px #0001;margin-bottom:14px}
+.note{font-size:12px;padding:10px 12px;border-radius:9px;background:#ecfdf5;color:#166534;border:1px solid #bbf7d0;margin-bottom:12px}
+.warn{font-size:12px;padding:10px 12px;border-radius:9px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;margin-bottom:12px}
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.role{border:1px solid #e5e7eb;border-top:6px solid var(--r);border-radius:12px;padding:15px;background:#fff}
+.role h2{margin:0 0 5px;font-size:18px}.role p{font-size:12px;color:var(--mut);min-height:34px}
+a.btn,button{display:block;width:100%;min-height:44px;padding:11px;border:0;border-radius:9px;background:var(--r);color:#fff;text-decoration:none;text-align:center;font-weight:800;font-size:15px;cursor:pointer}
+iframe{width:100%;height:76vh;border:0;border-radius:12px;background:white}
+.bar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:10px}.bar button{width:auto;background:#4b5563;min-height:38px;padding:8px 12px}
+.hidden{display:none}
+@media(max-width:720px){.roles{grid-template-columns:1fr}iframe{height:78vh}}
+</style>
+</head>
+<body>
+<header><div class="head"><div><h1>ALICORP · Sistema Central de Reposición</h1><div class="sub">Piloto integrado para Pickero, Supervisor y ETV</div></div></div></header>
+<div class="wrap">
+<div id="home">
+<div class="note">Desde este único sistema puedes entrar al flujo completo de reposición. Las tres funciones comparten la misma información del piloto.</div>
+<div class="warn">Modo piloto: no usar datos reales o confidenciales de Alicorp. La conexión con SAP EWM real todavía no está habilitada.</div>
+<div class="roles">
+<div class="role"><h2>👷 Pickero</h2><p>Leonardo genera la reposición y realiza seguimiento.</p><button onclick="openRole('pickero.html','Pickero · Leonardo')">ENTRAR COMO PICKERO</button></div>
+<div class="role"><h2>🖥 Supervisor</h2><p>Asigna o cambia el ETV responsable de cada reposición.</p><button onclick="openRole('supervisor.html','Supervisor')">ENTRAR COMO SUPERVISOR</button></div>
+<div class="role"><h2>🚜 ETV</h2><p>Junior recibe las tareas asignadas y actualiza sus estados.</p><button onclick="openRole('etv.html','ETV · Junior')">ENTRAR COMO ETV</button></div>
+</div>
+</div>
+<div id="workspace" class="hidden">
+<div class="bar"><b id="roleTitle"></b><button onclick="backHome()">CAMBIAR USUARIO</button></div>
+<iframe id="roleFrame" title="Sistema de reposición"></iframe>
+</div>
+</div>
+<script>
+function openRole(page,title){
+ document.getElementById('home').classList.add('hidden');
+ document.getElementById('workspace').classList.remove('hidden');
+ document.getElementById('roleTitle').textContent=title;
+ document.getElementById('roleFrame').src=page;
+}
+function backHome(){
+ document.getElementById('roleFrame').src='about:blank';
+ document.getElementById('workspace').classList.add('hidden');
+ document.getElementById('home').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
