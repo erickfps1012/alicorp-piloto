@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ALICORP Pickero V5</title><style>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ALICORP · App Pickero</title><style>
 :root{--red:#c8102e;--red2:#8f0b22;--bg:#f4f6f8;--txt:#1f2937;--mut:#6b7280;--green:#15803d;--blue:#1d4ed8}
 *{box-sizing:border-box}html,body{max-width:100%;overflow-x:hidden}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt)}
@@ -34,12 +34,28 @@ button.blue{background:var(--blue)}button.green{background:var(--green)}button.g
 #instruction.i-red{background:#fee2e2;color:#991b1b;border:2px solid #ef4444;font-weight:800}
 .legend{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}.legend span{font-size:11px;font-weight:800;padding:6px 9px;border-radius:999px}
 .toast{position:fixed;left:12px;right:12px;bottom:12px;max-width:520px;margin:auto;background:#111827;color:white;padding:12px 14px;border-radius:10px;box-shadow:0 8px 24px #0004;display:none;z-index:999}
-.small{font-size:12px;color:var(--mut)}
+.small{font-size:12px;color:var(--mut)}.hidden{display:none!important}
 .diag{font-size:11px;color:#6b7280;margin-top:6px;word-break:break-word}
 @media(max-width:760px){.grid{grid-template-columns:1fr}header button{width:100%!important}.card{padding:13px}.wrap{padding:0 9px}}
 </style></head>
-<body><header><div><h1>ALICORP · App Pickero</h1><div class="sub">Leonardo Iturrizaga · RF LITURRIZAGA</div></div><div><div id="conn" class="conn">Conectando...</div><div id="diag" class="diag"></div></div></header>
-<div class="wrap"><div class="note">Versión web para celular: abre esta aplicación desde una dirección HTTPS publicada, no desde una vista previa de archivo.</div>
+<body><header><div><h1>ALICORP · App Pickero</h1><div class="sub" id="pickerIdentity">Selecciona tu usuario Pickero</div></div><div><div id="conn" class="conn">Conectando...</div><div id="diag" class="diag"></div></div></header>
+<div class="wrap">
+<div class="card" id="pickerLogin">
+  <h2>Ingreso Pickero</h2>
+  <div class="note">Selecciona tu nombre. Las reposiciones que generes quedarán registradas con tu usuario.</div>
+  <label>Pickero</label>
+  <select id="pickerUser">
+    <option value="YLEON">Yasmani León · YLEON</option>
+    <option value="CRAMOS">César Ramos · CRAMOS</option>
+    <option value="OTEVES">Omar Teves · OTEVES</option>
+    <option value="LITURRIZAGA">Leonardo Iturrizaga · LITURRIZAGA</option>
+    <option value="JCHAVEZ">Jesús Chávez · JCHAVEZ</option>
+    <option value="APALACIOS">Antony Palacios · APALACIOS</option>
+  </select>
+  <button type="button" onclick="enterPicker()">INGRESAR COMO PICKERO</button>
+</div>
+<div id="pickerWork" class="hidden">
+<div class="note">Versión web para celular: abre esta aplicación desde una dirección HTTPS publicada, no desde una vista previa de archivo.</div>
 <div class="warn">Para el piloto usa datos ficticios. Abre esta página desde su enlace HTTPS en Chrome o Safari.</div>
 <div class="legend"><span class="i-green">Dejar afuera</span><span class="i-yellow">Hacer cambio</span><span class="i-red">En proceso</span></div>
 <div class="card"><h2>Nueva reposición</h2><div class="grid">
@@ -52,7 +68,7 @@ button.blue{background:var(--blue)}button.green{background:var(--green)}button.g
 <button type="button" onclick="createTask()">GENERAR REPOSICIÓN</button>
 <button type="button" class="gray" onclick="testConn()">PROBAR CONEXIÓN</button>
 <button type="button" class="blue" onclick="askNotify()">🔔 ACTIVAR AVISOS</button></div>
-<div class="card"><h2>Seguimiento</h2><div id="list"></div></div></div><div id="toast" class="toast"></div>
+<div class="card"><h2>Seguimiento</h2><div id="list"></div></div></div></div><div id="toast" class="toast"></div>
 <script>
 const ROLE="pickero"; const NOTIF_TOPIC="alicorp/piloto/33cda81c433f09c0aa4b479f/notif/pickero";
 const BASE="alicorp/piloto/33cda81c433f09c0aa4b479f";
@@ -63,6 +79,15 @@ const TOPIC_NOTIF_SUP=BASE+"/notif/supervisor";
 const BROKERS=[["EMQX","wss://broker.emqx.io:8084/mqtt"],["Mosquitto","wss://test.mosquitto.org:8081/mqtt"]];
 const ETWS=[{rf:"AAREVALO",name:"Álex Arévalo"},{rf:"RGUAMAN",name:"Roberto Guamán"},{rf:"LUNA",name:"Luna"},{rf:"RUFASTO",name:"Rufasto"},{rf:"JROJAS",name:"Junior Rojas"},{rf:"JLLERENA",name:"Junior Llerena"}];
 const STATES=["Pendiente","Tomada","En camino","En ubicación","Reposición realizada","Finalizada"];
+const PICKER_USERS=[
+ {rf:"YLEON",name:"Yasmani León"},
+ {rf:"CRAMOS",name:"César Ramos"},
+ {rf:"OTEVES",name:"Omar Teves"},
+ {rf:"LITURRIZAGA",name:"Leonardo Iturrizaga"},
+ {rf:"JCHAVEZ",name:"Jesús Chávez"},
+ {rf:"APALACIOS",name:"Antony Palacios"}
+];
+let CURRENT_PICKER=null;
 let tasks=[], rev=0, ready=false, brokers=[], statusMap={};
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function statusClass(s){return "s-"+String(s||"Pendiente").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/s+/g,"-")}
@@ -96,9 +121,53 @@ parse(){while(this.buf.length>=2){let mul=1,rem=0,i=1,d;do{if(i>=this.buf.length
 subscribe(topic){if(this.connected&&this.ws&&this.ws.readyState===1){try{this.ws.send(this.subscribePacket(topic))}catch(e){}}}
 publish(topic,msg,retain=false){if(!(this.connected&&this.ws&&this.ws.readyState===1))return false;try{this.ws.send(this.publishPacket(topic,msg,retain));return true}catch(e){return false}}
 }
+function enterPicker(){
+ const rf=document.getElementById("pickerUser").value;
+ const u=PICKER_USERS.find(x=>x.rf===rf);
+ if(!u)return toast("Selecciona un Pickero.");
+ CURRENT_PICKER=u;
+ localStorage.setItem("alicorp_picker_rf",rf);
+ document.getElementById("pickerIdentity").textContent=u.name+" · RF "+u.rf;
+ document.getElementById("pickerLogin").classList.add("hidden");
+ document.getElementById("pickerWork").classList.remove("hidden");
+ render();
+}
+function changePicker(){
+ localStorage.removeItem("alicorp_picker_rf");
+ CURRENT_PICKER=null;
+ document.getElementById("pickerIdentity").textContent="Selecciona tu usuario Pickero";
+ document.getElementById("pickerWork").classList.add("hidden");
+ document.getElementById("pickerLogin").classList.remove("hidden");
+}
+function restorePicker(){
+ const rf=localStorage.getItem("alicorp_picker_rf");
+ if(rf&&PICKER_USERS.some(x=>x.rf===rf)){document.getElementById("pickerUser").value=rf;enterPicker();}
+}
 function paintInstruction(){const e=document.getElementById("instruction");if(e)e.className=instrClass(e.value)}
 function testConn(){toast(connectedCount()>0?"✓ Conexión correcta. Ya puedes generar reposiciones.":"Todavía no conecta. Revisa el detalle de arriba.")}
-function createTask(){try{if(connectedCount()===0)return toast("Aún no hay conexión. Pulsa PROBAR CONEXIÓN.");if(!ready)return toast("Espera unos segundos mientras se sincroniza.");const taskEl=document.getElementById("task"),shiftEl=document.getElementById("shift"),aisleEl=document.getElementById("aisle"),locationEl=document.getElementById("location"),instructionEl=document.getElementById("instruction"),observationEl=document.getElementById("observation");const id=(taskEl.value||"").trim()||("WT-PILOTO-"+Date.now());if(tasks.some(t=>t.task_id===id))return toast("La tarea ya existe.");const x={task_id:id,pickero:"Leonardo Iturrizaga",pickero_rf:"LITURRIZAGA",shift:shiftEl.value,aisle:aisleEl.value,location:locationEl.value,instruction:instructionEl.value,observation:(observationEl.value||"").trim(),etv:"",etv_rf:"",status:"Pendiente",ewm_status:"OPEN",created_at:now(),updated_at:now()};tasks=[x,...tasks];if(!publishState())return;publishNotif(TOPIC_NOTIF_SUP,"Nueva reposición: "+id+" · P"+x.aisle+"/U"+x.location+" · "+x.instruction);taskEl.value="";observationEl.value="";toast("✓ Reposición generada: "+id);render()}catch(e){toast("Error: "+(e.message||"intenta nuevamente"))}}
-function render(){const el=document.getElementById("list");if(!el)return;el.innerHTML=tasks.length?tasks.map(t=>`<div class="task ${statusClass(t.status)}"><div class="head"><b>${esc(t.task_id)}</b><span class="badge">${esc(t.status)}</span></div><div class="meta">P${esc(t.aisle)} / U${esc(t.location)} · <span class="instr ${instrClass(t.instruction)}">${esc(t.instruction)}</span><br><span class="assigned">ETV: ${esc(t.etv||"Pendiente de asignación")}</span><br>EWM: ${esc(t.ewm_status)} · Actualizado: ${esc(t.updated_at)}</div></div>`).join(""):'<div class="small">Sin reposiciones.</div>'}
-paintInstruction();render();startBrokers();
+function createTask(){
+ try{
+  if(!CURRENT_PICKER)return toast("Primero selecciona tu usuario Pickero.");
+  if(connectedCount()===0)return toast("Aún no hay conexión. Pulsa PROBAR CONEXIÓN.");
+  if(!ready)return toast("Espera unos segundos mientras se sincroniza.");
+  const taskEl=document.getElementById("task"),shiftEl=document.getElementById("shift"),aisleEl=document.getElementById("aisle"),locationEl=document.getElementById("location"),instructionEl=document.getElementById("instruction"),observationEl=document.getElementById("observation");
+  const id=(taskEl.value||"").trim()||("WT-PILOTO-"+Date.now());
+  if(tasks.some(t=>t.task_id===id))return toast("La tarea ya existe.");
+  const x={task_id:id,pickero:CURRENT_PICKER.name,pickero_rf:CURRENT_PICKER.rf,shift:shiftEl.value,aisle:aisleEl.value,location:locationEl.value,instruction:instructionEl.value,observation:(observationEl.value||"").trim(),etv:"",etv_rf:"",status:"Pendiente",ewm_status:"OPEN",created_at:now(),updated_at:now()};
+  tasks=[x,...tasks];
+  if(!publishState())return;
+  publishNotif(TOPIC_NOTIF_SUP,"Nueva reposición: "+id+" · "+CURRENT_PICKER.name+" · P"+x.aisle+"/U"+x.location+" · "+x.instruction);
+  taskEl.value="";observationEl.value="";
+  toast("✓ Reposición generada: "+id);
+  render();
+ }catch(e){toast("Error: "+(e.message||"intenta nuevamente"))}
+}
+function render(){
+ const el=document.getElementById("list");if(!el)return;
+ if(!CURRENT_PICKER){el.innerHTML='<div class="small">Selecciona tu usuario Pickero.</div>';return;}
+ const mine=tasks.filter(t=>t.pickero_rf===CURRENT_PICKER.rf);
+ el.innerHTML=(mine.length?mine.map(t=>`<div class="task ${statusClass(t.status)}"><div class="head"><b>${esc(t.task_id)}</b><span class="badge">${esc(t.status)}</span></div><div class="meta">P${esc(t.aisle)} / U${esc(t.location)} · <span class="instr ${instrClass(t.instruction)}">${esc(t.instruction)}</span><br><span class="assigned">ETV: ${esc(t.etv||"Pendiente de asignación")}</span><br>EWM: ${esc(t.ewm_status)} · Actualizado: ${esc(t.updated_at)}</div></div>`).join(""):'<div class="small">No tienes reposiciones registradas.</div>')+
+ '<button type="button" class="gray" onclick="changePicker()">CAMBIAR USUARIO PICKERO</button>';
+}
+paintInstruction();render();startBrokers();restorePicker();
 </script></body></html>
