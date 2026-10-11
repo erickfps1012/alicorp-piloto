@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ALICORP ETV Junior V5</title><style>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ALICORP · App ETV</title><style>
 :root{--red:#c8102e;--red2:#8f0b22;--bg:#f4f6f8;--txt:#1f2937;--mut:#6b7280;--green:#15803d;--blue:#1d4ed8}
 *{box-sizing:border-box}html,body{max-width:100%;overflow-x:hidden}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt)}
@@ -34,14 +34,31 @@ button.blue{background:var(--blue)}button.green{background:var(--green)}button.g
 #instruction.i-red{background:#fee2e2;color:#991b1b;border:2px solid #ef4444;font-weight:800}
 .legend{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}.legend span{font-size:11px;font-weight:800;padding:6px 9px;border-radius:999px}
 .toast{position:fixed;left:12px;right:12px;bottom:12px;max-width:520px;margin:auto;background:#111827;color:white;padding:12px 14px;border-radius:10px;box-shadow:0 8px 24px #0004;display:none;z-index:999}
-.small{font-size:12px;color:var(--mut)}
+.small{font-size:12px;color:var(--mut)}.hidden{display:none!important}
 .diag{font-size:11px;color:#6b7280;margin-top:6px;word-break:break-word}
 @media(max-width:760px){.grid{grid-template-columns:1fr}header button{width:100%!important}.card{padding:13px}.wrap{padding:0 9px}}
 </style></head>
-<body><header><div><h1>ALICORP · App ETV</h1><div class="sub">Junior Llerena · RF JLLERENA</div></div><div><div id="conn" class="conn">Conectando...</div><div id="diag" class="diag"></div></div></header>
-<div class="wrap"><div class="note">Junior solo ve y avanza las tareas asignadas a JLLERENA.</div>
+<body><header><div><h1>ALICORP · App ETV</h1><div class="sub" id="etvIdentity">Selecciona tu usuario ETV</div></div><div><div id="conn" class="conn">Conectando...</div><div id="diag" class="diag"></div></div></header>
+<div class="wrap">
+<div class="card" id="etvLogin">
+  <h2>Ingreso ETV</h2>
+  <div class="note">Selecciona tu nombre. Luego solo verás las reposiciones asignadas a tu RF.</div>
+  <label>Operador ETV</label>
+  <select id="etvUser">
+    <option value="AAREVALO">Álex Arévalo · AAREVALO</option>
+    <option value="JROJAS">Junior Rojas · JROJAS</option>
+    <option value="JLLERENA">Junior Llerena · JLLERENA</option>
+    <option value="LUNA">Jhony Luna · LUNA</option>
+    <option value="RUFASTO">Ernesto Rufasto · RUFASTO</option>
+    <option value="MVIVANCO">Marco Vivanco · MVIVANCO</option>
+    <option value="RHUAMAN">Roberto Huamán · RHUAMAN</option>
+  </select>
+  <button type="button" onclick="enterETV()">INGRESAR COMO ETV</button>
+</div>
+<div id="etvWork" class="hidden">
+<div class="note">Solo verás y podrás avanzar las tareas asignadas a tu usuario ETV.</div>
 <div class="warn">Abre esta página desde su enlace HTTPS en Chrome o Safari. Piloto con datos ficticios.</div>
-<div class="card"><h2>Mis reposiciones</h2><div id="list"></div><button type="button" class="gray" onclick="testConn()">PROBAR CONEXIÓN</button><button type="button" class="blue" onclick="askNotify()">🔔 ACTIVAR AVISOS</button></div></div><div id="toast" class="toast"></div>
+<div class="card"><h2>Mis reposiciones</h2><div id="list"></div><button type="button" class="gray" onclick="testConn()">PROBAR CONEXIÓN</button><button type="button" class="blue" onclick="askNotify()">🔔 ACTIVAR AVISOS</button></div></div></div><div id="toast" class="toast"></div>
 <script>
 const ROLE="etv"; const NOTIF_TOPIC="alicorp/piloto/33cda81c433f09c0aa4b479f/notif/junior";
 const BASE="alicorp/piloto/33cda81c433f09c0aa4b479f";
@@ -52,6 +69,16 @@ const TOPIC_NOTIF_SUP=BASE+"/notif/supervisor";
 const BROKERS=[["EMQX","wss://broker.emqx.io:8084/mqtt"],["Mosquitto","wss://test.mosquitto.org:8081/mqtt"]];
 const ETWS=[{rf:"AAREVALO",name:"Álex Arévalo"},{rf:"RGUAMAN",name:"Roberto Guamán"},{rf:"LUNA",name:"Luna"},{rf:"RUFASTO",name:"Rufasto"},{rf:"JROJAS",name:"Junior Rojas"},{rf:"JLLERENA",name:"Junior Llerena"}];
 const STATES=["Pendiente","Tomada","En camino","En ubicación","Reposición realizada","Finalizada"];
+const ETV_USERS=[
+ {rf:"AAREVALO",name:"Álex Arévalo"},
+ {rf:"JROJAS",name:"Junior Rojas"},
+ {rf:"JLLERENA",name:"Junior Llerena"},
+ {rf:"LUNA",name:"Jhony Luna"},
+ {rf:"RUFASTO",name:"Ernesto Rufasto"},
+ {rf:"MVIVANCO",name:"Marco Vivanco"},
+ {rf:"RHUAMAN",name:"Roberto Huamán"}
+];
+let CURRENT_ETV=null;
 let tasks=[],rev=0,ready=false,brokers=[],statusMap={};
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function statusClass(s){return "s-"+String(s||"Pendiente").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/s+/g,"-")}
@@ -85,8 +112,52 @@ parse(){while(this.buf.length>=2){let mul=1,rem=0,i=1,d;do{if(i>=this.buf.length
 subscribe(topic){if(this.connected&&this.ws&&this.ws.readyState===1){try{this.ws.send(this.subscribePacket(topic))}catch(e){}}}
 publish(topic,msg,retain=false){if(!(this.connected&&this.ws&&this.ws.readyState===1))return false;try{this.ws.send(this.publishPacket(topic,msg,retain));return true}catch(e){return false}}
 }
+function enterETV(){
+ const rf=document.getElementById("etvUser").value;
+ const u=ETV_USERS.find(x=>x.rf===rf);
+ if(!u)return toast("Selecciona un ETV.");
+ CURRENT_ETV=u;
+ localStorage.setItem("alicorp_etv_rf",rf);
+ document.getElementById("etvIdentity").textContent=u.name+" · RF "+u.rf;
+ document.getElementById("etvLogin").classList.add("hidden");
+ document.getElementById("etvWork").classList.remove("hidden");
+ render();
+}
+function changeETV(){
+ localStorage.removeItem("alicorp_etv_rf");
+ CURRENT_ETV=null;
+ document.getElementById("etvIdentity").textContent="Selecciona tu usuario ETV";
+ document.getElementById("etvWork").classList.add("hidden");
+ document.getElementById("etvLogin").classList.remove("hidden");
+}
+function restoreETV(){
+ const rf=localStorage.getItem("alicorp_etv_rf");
+ if(rf&&ETV_USERS.some(x=>x.rf===rf)){document.getElementById("etvUser").value=rf;enterETV();}
+}
 function testConn(){toast(connectedCount()>0?"✓ Conexión correcta.":"Todavía no conecta. Revisa el detalle de arriba.")}
-function advance(id,status){if(connectedCount()===0)return toast("Sin conexión.");const t=tasks.find(x=>x.task_id===id);if(!t)return toast("Tarea no encontrada.");if(t.etv_rf!=="JLLERENA")return toast("Esta tarea ya no está asignada a Junior Llerena.");const i=STATES.indexOf(status);if(i<0||i>=STATES.length-1)return;t.status=STATES[i+1];t.ewm_status=t.status==="Finalizada"?"CONFIRMED":"ASSIGNED";t.updated_at=now();if(!publishState())return;publishNotif(TOPIC_NOTIF_PICK,id+": Junior Llerena → "+t.status);publishNotif(TOPIC_NOTIF_SUP,id+": Junior Llerena → "+t.status);toast("✓ Estado: "+t.status);render()}
-function render(){const el=document.getElementById("list");if(!el)return;const mine=tasks.filter(t=>t.etv_rf==="JLLERENA"&&t.status!=="Finalizada");el.innerHTML=mine.length?mine.map(t=>`<div class="task ${statusClass(t.status)}"><div class="head"><b>${esc(t.task_id)}</b><span class="badge">${esc(t.status)}</span></div><div class="meta">P${esc(t.aisle)} / U${esc(t.location)} · <span class="instr ${instrClass(t.instruction)}">${esc(t.instruction)}</span><br>Pickero: Leonardo Iturrizaga · <span class="assigned">Asignada a Junior Llerena</span><br>EWM: ${esc(t.ewm_status)}</div><button type="button" class="green" onclick="advance('${esc(t.task_id)}','${esc(t.status)}')">AVANZAR ESTADO</button></div>`).join(""):'<div class="small">No tienes tareas asignadas.</div>'}
-render();startBrokers();
+function advance(id,status){
+ if(!CURRENT_ETV)return toast("Primero selecciona tu usuario ETV.");
+ if(connectedCount()===0)return toast("Sin conexión.");
+ const t=tasks.find(x=>x.task_id===id);
+ if(!t)return toast("Tarea no encontrada.");
+ if(t.etv_rf!==CURRENT_ETV.rf)return toast("Esta tarea ya no está asignada a "+CURRENT_ETV.name+".");
+ const i=STATES.indexOf(status);
+ if(i<0||i>=STATES.length-1)return;
+ t.status=STATES[i+1];
+ t.ewm_status=t.status==="Finalizada"?"CONFIRMED":"ASSIGNED";
+ t.updated_at=now();
+ if(!publishState())return;
+ publishNotif(TOPIC_NOTIF_PICK,id+": "+CURRENT_ETV.name+" → "+t.status);
+ publishNotif(TOPIC_NOTIF_SUP,id+": "+CURRENT_ETV.name+" → "+t.status);
+ toast("✓ Estado: "+t.status);
+ render();
+}
+function render(){
+ const el=document.getElementById("list");if(!el)return;
+ if(!CURRENT_ETV){el.innerHTML='<div class="small">Selecciona tu usuario ETV.</div>';return;}
+ const mine=tasks.filter(t=>t.etv_rf===CURRENT_ETV.rf&&t.status!=="Finalizada");
+ el.innerHTML=(mine.length?mine.map(t=>`<div class="task ${statusClass(t.status)}"><div class="head"><b>${esc(t.task_id)}</b><span class="badge">${esc(t.status)}</span></div><div class="meta">P${esc(t.aisle)} / U${esc(t.location)} · <span class="instr ${instrClass(t.instruction)}">${esc(t.instruction)}</span><br>Pickero: ${esc(t.pickero||"Pickero")} · <span class="assigned">Asignada a ${esc(CURRENT_ETV.name)}</span><br>EWM: ${esc(t.ewm_status)}</div><button type="button" class="green" onclick="advance('${esc(t.task_id)}','${esc(t.status)}')">AVANZAR ESTADO</button></div>`).join(""):'<div class="small">No tienes tareas asignadas.</div>')+
+ '<button type="button" class="gray" onclick="changeETV()">CAMBIAR USUARIO ETV</button>';
+}
+render();startBrokers();restoreETV();
 </script></body></html>
