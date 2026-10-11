@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>ALICORP · Registro Excel</title>
+<style>
+:root{--r:#c8102e;--r2:#8f0b22;--bg:#f4f6f8;--txt:#1f2937;--mut:#6b7280;--green:#15803d}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt)}
+header{background:linear-gradient(135deg,var(--r),var(--r2));color:#fff;padding:16px}
+.h{max-width:1180px;margin:auto;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+h1{margin:0;font-size:20px}.sub{font-size:12px;opacity:.9}
+.wrap{max-width:1180px;margin:14px auto;padding:0 10px}.card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 4px 18px #0001}
+.note{font-size:12px;padding:10px;border-radius:9px;background:#ecfdf5;color:#166534;border:1px solid #bbf7d0;margin-bottom:12px}
+.conn{font-size:11px;font-weight:800;padding:6px 9px;border-radius:999px;background:#fee2e2;color:#991b1b}.conn.ok{background:#dcfce7;color:#166534}
+button{min-height:42px;padding:10px 13px;border:0;border-radius:9px;background:var(--green);color:#fff;font-weight:800;cursor:pointer;margin-bottom:10px}
+.tablewrap{overflow:auto;border:1px solid #e5e7eb;border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:1500px;font-size:11px}th,td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;white-space:nowrap}
+th{position:sticky;top:0;background:#c8102e;color:#fff;z-index:2}tr:nth-child(even){background:#f9fafb}
+.small{font-size:11px;color:var(--mut);margin-top:8px}
+</style>
+</head>
+<body>
+<header><div class="h"><div><h1>ALICORP · Registro de Reposiciones</h1><div class="sub">Vista tipo Excel · actualización automática del piloto</div></div><div id="conn" class="conn">Conectando...</div></div></header>
+<div class="wrap">
+<div class="note">Esta tabla se actualiza automáticamente cuando cambia una reposición. Para guardar una copia en Excel, pulsa el botón de descarga.</div>
+<div class="card">
+<button onclick="exportExcel()">DESCARGAR EXCEL ACTUALIZADO</button>
+<div class="tablewrap"><table><thead><tr>
+<th>ID Tarea</th><th>Fecha</th><th>Hora</th><th>Pickero</th><th>RF Pickero</th><th>Turno</th><th>Pasillo</th><th>Ubicación</th><th>Indicación</th><th>Observación</th><th>ETV</th><th>RF ETV</th><th>Estado</th><th>EWM</th><th>Asignación</th><th>Última actualización</th>
+</tr></thead><tbody id="rows"></tbody></table></div>
+<div id="count" class="small">0 reposiciones</div>
+</div></div>
+<script>
+const ROLE="reporte",BASE="alicorp/piloto/33cda81c433f09c0aa4b479f",TOPIC_STATE=BASE+"/state";
+const BROKERS=[["EMQX","wss://broker.emqx.io:8084/mqtt"],["Mosquitto","wss://test.mosquitto.org:8081/mqtt"]];
+let tasks=[],rev=0,brokers=[];
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function connectedCount(){return brokers.filter(b=>b.connected).length}
+function updateConn(){const n=connectedCount(),e=document.getElementById("conn");e.textContent=n?"Internet conectado ("+n+"/2)":"Conectando...";e.className=n?"conn ok":"conn"}
+function dt(v){if(!v)return["",""];const d=new Date(v);return[d.toLocaleDateString("es-PE"),d.toLocaleTimeString("es-PE",{hour:"2-digit",minute:"2-digit"})]}
+function render(){const r=document.getElementById("rows");r.innerHTML=tasks.map(t=>{const a=dt(t.created_at);return "<tr><td>"+esc(t.task_id)+"</td><td>"+a[0]+"</td><td>"+a[1]+"</td><td>"+esc(t.pickero)+"</td><td>"+esc(t.pickero_rf)+"</td><td>"+esc(t.shift)+"</td><td>"+esc(t.aisle)+"</td><td>"+esc(t.location)+"</td><td>"+esc(t.instruction)+"</td><td>"+esc(t.observation)+"</td><td>"+esc(t.etv)+"</td><td>"+esc(t.etv_rf)+"</td><td>"+esc(t.status)+"</td><td>"+esc(t.ewm_status)+"</td><td>"+esc(t.assignment_mode||"MANUAL")+"</td><td>"+esc(t.updated_at)+"</td></tr>"}).join("");document.getElementById("count").textContent=tasks.length+" reposiciones"}
+function exportExcel(){
+ const cols=["ID Tarea","Fecha creación","Hora","Pickero","RF Pickero","Turno","Pasillo","Ubicación","Indicación","Observación","ETV asignado","RF ETV","Estado","Estado EWM","Modo asignación","Última actualización"];
+ const rows=tasks.map(t=>{const a=dt(t.created_at);return[t.task_id,a[0],a[1],t.pickero,t.pickero_rf,t.shift,t.aisle,t.location,t.instruction,t.observation,t.etv,t.etv_rf,t.status,t.ewm_status,t.assignment_mode||"MANUAL",t.updated_at]});
+ const x=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+ let xml='<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="REPOSICIONES"><Table>';
+ xml+='<Row>'+cols.map(v=>'<Cell><Data ss:Type="String">'+x(v)+'</Data></Cell>').join("")+'</Row>';
+ rows.forEach(row=>xml+='<Row>'+row.map(v=>'<Cell><Data ss:Type="String">'+x(v)+'</Data></Cell>').join("")+'</Row>');
+ xml+='</Table></Worksheet></Workbook>';
+ const blob=new Blob([xml],{type:"application/vnd.ms-excel"});
+ const a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download="ALICORP_Reposiciones_Actualizado.xls";
+ document.body.appendChild(a);
+ a.click();
+ setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+}
+function brokerMessage(b,topic,msg){if(topic!==TOPIC_STATE)return;try{const o=JSON.parse(msg),r=Number(o.rev||0);if(r>rev){rev=r;tasks=Array.isArray(o.tasks)?o.tasks:[];render();brokers.forEach(other=>{if(other!==b&&other.connected)other.publish(TOPIC_STATE,JSON.stringify({rev,tasks,updated_at:o.updated_at||new Date().toISOString()}),true)})}}catch(e){}}
+class MiniMQTT{
+constructor(url,name){this.url=url;this.name=name;this.ws=null;this.connected=false;this.buf=new Uint8Array(0);this.pid=1;this.timer=null}
+u8(s){return new TextEncoder().encode(s)}s8(a){return new TextDecoder().decode(a)}
+mstr(s){const b=this.u8(s),o=new Uint8Array(2+b.length);o[0]=b.length>>8;o[1]=b.length&255;o.set(b,2);return o}
+cat(...a){let n=0;a.forEach(x=>n+=x.length);const o=new Uint8Array(n);let p=0;a.forEach(x=>{o.set(x,p);p+=x.length});return o}
+rem(n){const a=[];do{let d=n%128;n=Math.floor(n/128);if(n)d|=128;a.push(d)}while(n);return new Uint8Array(a)}
+pack(h,p){return this.cat(new Uint8Array([h]),this.rem(p.length),p)}
+connectPacket(){return this.pack(0x10,this.cat(this.mstr("MQTT"),new Uint8Array([4,2,0,30]),this.mstr("alicorp_"+ROLE+"_"+Math.random().toString(16).slice(2,10))))}
+subPacket(t){this.pid=(this.pid%65535)+1;return this.pack(0x82,this.cat(new Uint8Array([this.pid>>8,this.pid&255]),this.mstr(t),new Uint8Array([0])))}
+pubPacket(t,m,r){return this.pack(0x30|(r?1:0),this.cat(this.mstr(t),this.u8(m)))}
+connect(){try{this.ws=new WebSocket(this.url,["mqtt"]);this.ws.binaryType="arraybuffer";this.ws.onopen=()=>this.ws.send(this.connectPacket());this.ws.onmessage=e=>{this.buf=this.cat(this.buf,new Uint8Array(e.data));this.parse()};this.ws.onclose=()=>{this.connected=false;clearInterval(this.timer);updateConn();setTimeout(()=>this.connect(),3500)}}catch(e){setTimeout(()=>this.connect(),5000)}}
+parse(){while(this.buf.length>=2){let mul=1,rem=0,i=1,d;do{if(i>=this.buf.length)return;d=this.buf[i++];rem+=(d&127)*mul;mul*=128}while(d&128);if(this.buf.length<i+rem)return;const h=this.buf[0],p=this.buf.slice(i,i+rem);this.buf=this.buf.slice(i+rem);const type=h>>4;if(type===2&&p[1]===0){this.connected=true;updateConn();this.subscribe(TOPIC_STATE);this.timer=setInterval(()=>{if(this.connected&&this.ws.readyState===1)this.ws.send(new Uint8Array([0xC0,0]))},20000)}else if(type===3){const len=(p[0]<<8)|p[1];brokerMessage(this,this.s8(p.slice(2,2+len)),this.s8(p.slice(2+len)))}}}
+subscribe(t){if(this.connected&&this.ws.readyState===1)this.ws.send(this.subPacket(t))}
+publish(t,m,r=false){if(!(this.connected&&this.ws&&this.ws.readyState===1))return false;try{this.ws.send(this.pubPacket(t,m,r));return true}catch(e){return false}}
+}
+brokers=BROKERS.map(([n,u])=>new MiniMQTT(u,n));brokers.forEach(b=>b.connect());render();
+</script>
+</body></html>
