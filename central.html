@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#c8102e">
+<meta name="theme-color" content="#c8102e"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
 <title>ALICORP · Sistema Central de Reposición</title>
 <style>
 :root{--r:#c8102e;--r2:#8f0b22;--bg:#f4f6f8;--txt:#1f2937;--mut:#6b7280}
@@ -30,7 +30,7 @@ iframe{width:100%;height:76vh;border:0;border-radius:12px;background:white}
 <div class="note">Desde este único sistema puedes entrar al flujo completo de reposición. Las tres funciones comparten la misma información del piloto.</div>
 <div class="warn">Modo piloto: no usar datos reales o confidenciales de Alicorp. La conexión con SAP EWM real todavía no está habilitada.</div>
 <div class="roles">
-<div class="role"><h2>👷 Pickero</h2><p>Cada pickero genera sus reposiciones y realiza seguimiento.</p><button onclick="openRole('pickero.html','Pickero')">ENTRAR COMO PICKERO</button></div>
+<div class="role"><h2>👷 Pickero</h2><p>Pickers: Yasmani León, César Ramos, Omar Teves, Leonardo Iturrizaga, Jesús Chávez y Antony Palacios.</p><button onclick="openRole('pickero.html','Pickero')">ENTRAR COMO PICKERO</button></div>
 <div class="role"><h2>🖥 Supervisor</h2><p>Asigna o cambia el ETV responsable de cada reposición.</p><button onclick="openRole('supervisor.html','Supervisor')">ENTRAR COMO SUPERVISOR</button></div>
 <div class="role"><h2>🚜 ETV</h2><p>Cada operador ETV ingresa con su usuario y ve solo las tareas que tiene asignadas.</p><button onclick="openRole('etv.html','ETV')">ENTRAR COMO ETV</button></div>
 </div>
@@ -45,7 +45,7 @@ function openRole(page,title){
  document.getElementById('home').classList.add('hidden');
  document.getElementById('workspace').classList.remove('hidden');
  document.getElementById('roleTitle').textContent=title;
- document.getElementById('roleFrame').src=page;
+ document.getElementById('roleFrame').src=page+'?v='+Date.now();
 }
 function backHome(){
  document.getElementById('roleFrame').src='about:blank';
