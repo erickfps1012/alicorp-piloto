@@ -77,7 +77,7 @@ const TOPIC_NOTIF_PICK=BASE+"/notif/pickero";
 const TOPIC_NOTIF_JUNIOR=BASE+"/notif/junior";
 const TOPIC_NOTIF_SUP=BASE+"/notif/supervisor";
 const BROKERS=[["EMQX","wss://broker.emqx.io:8084/mqtt"],["Mosquitto","wss://test.mosquitto.org:8081/mqtt"]];
-const ETWS=[{rf:"AAREVALO",name:"Álex Arévalo"},{rf:"RGUAMAN",name:"Roberto Guamán"},{rf:"LUNA",name:"Luna"},{rf:"RUFASTO",name:"Rufasto"},{rf:"JROJAS",name:"Junior Rojas"},{rf:"JLLERENA",name:"Junior Llerena"}];
+const ETWS=[{rf:"AAREVALO",name:"Álex Arévalo",w:1},{rf:"JROJAS",name:"Junior Rojas",w:3},{rf:"JLLERENA",name:"Junior Llerena",w:3},{rf:"LUNA",name:"Jhony Luna",w:3},{rf:"RUFASTO",name:"Ernesto Rufasto",w:1},{rf:"MVIVANCO",name:"Marco Vivanco",w:1},{rf:"RHUAMAN",name:"Roberto Huamán",w:1}];
 const STATES=["Pendiente","Tomada","En camino","En ubicación","Reposición realizada","Finalizada"];
 const PICKER_USERS=[
  {rf:"YLEON",name:"Yasmani León"},
@@ -145,6 +145,18 @@ function restorePicker(){
 }
 function paintInstruction(){const e=document.getElementById("instruction");if(e)e.className=instrClass(e.value)}
 function testConn(){toast(connectedCount()>0?"✓ Conexión correcta. Ya puedes generar reposiciones.":"Todavía no conecta. Revisa el detalle de arriba.")}
+function chooseBalancedETV(){
+  // Prioridad ponderada: Junior Llerena, Junior Rojas y Jhony Luna tienen más probabilidad,
+  // pero la carga activa reduce sus posibilidades para mantener el reparto equilibrado.
+  const active=tasks.filter(t=>t.status!=="Finalizada"&&t.etv_rf);
+  const weighted=[];
+  ETWS.forEach(e=>{
+    const load=active.filter(t=>t.etv_rf===e.rf).length;
+    const tickets=Math.max(1,Math.round((e.w||1)*6/(load+1)));
+    for(let i=0;i<tickets;i++) weighted.push(e);
+  });
+  return weighted[Math.floor(Math.random()*weighted.length)]||ETWS[0];
+}
 function createTask(){
  try{
   if(!CURRENT_PICKER)return toast("Primero selecciona tu usuario Pickero.");
@@ -153,12 +165,12 @@ function createTask(){
   const taskEl=document.getElementById("task"),shiftEl=document.getElementById("shift"),aisleEl=document.getElementById("aisle"),locationEl=document.getElementById("location"),instructionEl=document.getElementById("instruction"),observationEl=document.getElementById("observation");
   const id=(taskEl.value||"").trim()||("WT-PILOTO-"+Date.now());
   if(tasks.some(t=>t.task_id===id))return toast("La tarea ya existe.");
-  const x={task_id:id,pickero:CURRENT_PICKER.name,pickero_rf:CURRENT_PICKER.rf,shift:shiftEl.value,aisle:aisleEl.value,location:locationEl.value,instruction:instructionEl.value,observation:(observationEl.value||"").trim(),etv:"",etv_rf:"",status:"Pendiente",ewm_status:"OPEN",created_at:now(),updated_at:now()};
+  const autoETV=chooseBalancedETV();const x={task_id:id,pickero:CURRENT_PICKER.name,pickero_rf:CURRENT_PICKER.rf,shift:shiftEl.value,aisle:aisleEl.value,location:locationEl.value,instruction:instructionEl.value,observation:(observationEl.value||"").trim(),etv:autoETV.name,etv_rf:autoETV.rf,status:"Pendiente",ewm_status:"ASSIGNED",created_at:now(),updated_at:now(),assignment_mode:"AUTO_BALANCEADO"};
   tasks=[x,...tasks];
   if(!publishState())return;
-  publishNotif(TOPIC_NOTIF_SUP,"Nueva reposición: "+id+" · "+CURRENT_PICKER.name+" · P"+x.aisle+"/U"+x.location+" · "+x.instruction);
+  publishNotif(TOPIC_NOTIF_SUP,"Nueva reposición: "+id+" · "+CURRENT_PICKER.name+" · autoasignada a "+autoETV.name+" · P"+x.aisle+"/U"+x.location+" · "+x.instruction);publishNotif(TOPIC_NOTIF_JUNIOR,"Nueva reposición autoasignada a "+autoETV.name+": "+id+" · P"+x.aisle+"/U"+x.location);
   taskEl.value="";observationEl.value="";
-  toast("✓ Reposición generada: "+id);
+  toast("✓ Reposición generada y asignada a "+autoETV.name);
   render();
  }catch(e){toast("Error: "+(e.message||"intenta nuevamente"))}
 }
