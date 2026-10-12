@@ -48,7 +48,7 @@ const ROLE="registro";
 const NOTIF_TOPIC="alicorp/piloto/33cda81c433f09c0aa4b479f/notif/registro";
 const BASE="alicorp/piloto/33cda81c433f09c0aa4b479f";
 const TOPIC_STATE=BASE+"/state";
-const BROKERS=[["Shiftr","wss://public.cloud.shiftr.io","public","public"],["EMQX","wss://broker.emqx.io:8084/mqtt","",""],["Mosquitto","wss://test.mosquitto.org:8081/mqtt","",""]];
+const BROKERS=[["Shiftr","wss://public.cloud.shiftr.io","public","public"]];
 let tasks=[],rev=0,ready=false,brokers=[],statusMap={};
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
@@ -76,7 +76,7 @@ function startBrokers(){
  brokers=BROKERS.map(([name,url,user,pass])=>new MiniMQTT(url,name,brokerStatus,brokerMessage,user,pass));
  brokers.forEach(b=>b.connect());
  setTimeout(()=>{if(!ready){ready=true;render()}},3500);
- setTimeout(()=>{if(connectedCount()===0){const c=document.getElementById("conn");if(c)c.textContent="Sin conexión al servidor"}},14000);
+ setTimeout(()=>{if(connectedCount()===0){const c=document.getElementById("conn");if(c)c.textContent="Reintentando conexión...";brokers.forEach(b=>{try{if(!b.connected)b.connect()}catch(e){}})}},7000);
 }
 function fmtDate(v){if(!v)return"";const d=new Date(v);return isNaN(d)?"":d.toLocaleDateString("es-PE")}
 function fmtTime(v){if(!v)return"";const d=new Date(v);return isNaN(d)?"":d.toLocaleTimeString("es-PE",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}
