@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ALICORP Supervisor V5</title><style>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ALICORP · Supervisión de Reposiciones</title><style>
 :root{--red:#c8102e;--red2:#8f0b22;--bg:#f4f6f8;--txt:#1f2937;--mut:#6b7280;--green:#15803d;--blue:#1d4ed8}
 *{box-sizing:border-box}html,body{max-width:100%;overflow-x:hidden}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt)}
@@ -35,13 +35,38 @@ button.blue{background:var(--blue)}button.green{background:var(--green)}button.g
 .legend{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}.legend span{font-size:11px;font-weight:800;padding:6px 9px;border-radius:999px}
 .toast{position:fixed;left:12px;right:12px;bottom:12px;max-width:520px;margin:auto;background:#111827;color:white;padding:12px 14px;border-radius:10px;box-shadow:0 8px 24px #0004;display:none;z-index:999}
 .small{font-size:12px;color:var(--mut)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px}.kpi b{display:block;font-size:24px;line-height:1.1}.kpi span{font-size:11px;color:var(--mut)}
+.toolbar{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin:10px 0 14px}
+.summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.summarybox{border:1px solid #e5e7eb;border-radius:11px;padding:12px;background:#fafafa}.summarybox h3{margin:0 0 8px;font-size:14px}
+.etvrow{display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e5e7eb;padding:7px 0;font-size:12px}.etvrow:first-of-type{border-top:0}
+.history{margin-top:9px;padding-top:8px;border-top:1px dashed #d1d5db;font-size:11px;color:#4b5563}.history div{margin:4px 0}
+.time{font-size:11px;color:#6b7280;margin-top:5px}
 .diag{font-size:11px;color:#6b7280;margin-top:6px;word-break:break-word}
-@media(max-width:760px){.grid{grid-template-columns:1fr}header button{width:100%!important}.card{padding:13px}.wrap{padding:0 9px}}
+@media(max-width:760px){.grid,.toolbar,.summary{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}header button{width:100%!important}.card{padding:13px}.wrap{padding:0 9px}}
 </style></head>
-<body><header><div><h1>ALICORP · Supervisor</h1><div class="sub">Asignación / reasignación de ETV</div></div><div><div id="conn" class="conn">Conectando...</div><div id="diag" class="diag"></div></div></header>
-<div class="wrap"><div class="note">El Supervisor puede asignar o cambiar el ETV. El cambio se comparte por internet.</div>
-<div class="warn">Abre esta página desde su enlace HTTPS en Chrome o Safari. Piloto con datos ficticios.</div>
-<div class="card"><h2>Cola de reposiciones</h2><div id="list"></div><button type="button" class="gray" onclick="testConn()">PROBAR CONEXIÓN</button></div></div><div id="toast" class="toast"></div>
+<body><header><div><h1>ALICORP · Supervisión de Reposiciones</h1><div class="sub">Área de Despacho · Control operativo y asignación de ETV</div></div><div><div id="conn" class="conn">Conectando...</div><div id="diag" class="diag"></div></div></header>
+<div class="wrap">
+<div class="note">Panel de control para seguimiento de reposiciones, carga por ETV y reasignación operativa.</div>
+<div class="warn">Entorno piloto. La información mostrada corresponde al sistema de demostración y no a SAP EWM productivo.</div>
+<div id="kpis" class="kpis"></div>
+<div class="summary">
+  <div class="summarybox"><h3>Carga actual por ETV</h3><div id="etvLoad"></div></div>
+  <div class="summarybox"><h3>Control de operación</h3><div class="small">Utiliza el buscador para ubicar una tarea por ID, pickero, ETV, pasillo o ubicación.</div><button type="button" class="gray" onclick="testConn()">PROBAR CONEXIÓN</button></div>
+</div>
+<div class="card">
+  <div class="head"><h2 style="margin:0">Cola de reposiciones</h2><span id="resultCount" class="small"></span></div>
+  <div class="toolbar">
+    <input id="searchBox" placeholder="Buscar tarea, pickero, ETV, pasillo o ubicación" oninput="render()">
+    <select id="statusFilter" onchange="render()">
+      <option value="">Todos los estados</option>
+      <option>Pendiente</option><option>Tomada</option><option>En camino</option><option>En ubicación</option><option>Reposición realizada</option><option>Finalizada</option>
+    </select>
+  </div>
+  <div id="list"></div>
+</div>
+</div><div id="toast" class="toast"></div>
 <script>
 const ROLE="supervisor"; const NOTIF_TOPIC="alicorp/piloto/33cda81c433f09c0aa4b479f/notif/supervisor";
 const BASE="alicorp/piloto/33cda81c433f09c0aa4b479f";
@@ -54,7 +79,7 @@ const ETWS=[{rf:"AAREVALO",name:"Álex Arévalo"},{rf:"JROJAS",name:"Junior Roja
 const STATES=["Pendiente","Tomada","En camino","En ubicación","Reposición realizada","Finalizada"];
 let tasks=[], rev=0, ready=false, brokers=[], statusMap={};
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-function statusClass(s){return "s-"+String(s||"Pendiente").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/s+/g,"-")}
+function statusClass(s){return "s-"+String(s||"Pendiente").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g,"-")}
 function instrClass(s){s=String(s||"").toLowerCase();return s.includes("dejar")?"i-green":s.includes("hacer")?"i-yellow":"i-red"}
 function now(){return new Date().toISOString()}
 function toast(m){const t=document.getElementById("toast");if(t){t.textContent=m;t.style.display="block";setTimeout(()=>t.style.display="none",3800)}}
@@ -87,8 +112,77 @@ publish(topic,msg,retain=false){if(!(this.connected&&this.ws&&this.ws.readyState
 }
 const pendingSelection={};
 function rememberSelection(i,v){pendingSelection[i]=v}
+function fmtDate(v){if(!v)return"-";try{return new Date(v).toLocaleString("es-PE")}catch(e){return String(v)}}
+function historyHtml(t){
+ const h=Array.isArray(t.history)?t.history:[];
+ if(!h.length)return"";
+ return '<div class="history"><b>Trazabilidad reciente</b>'+h.slice(-4).reverse().map(x=>'<div>• '+esc(fmtDate(x.time))+' · '+esc(x.actor||"Sistema")+' · '+esc(x.action||"Actualización")+'</div>').join("")+'</div>';
+}
+function renderDashboard(){
+ const total=tasks.length;
+ const pending=tasks.filter(t=>t.status==="Pendiente").length;
+ const active=tasks.filter(t=>!["Pendiente","Finalizada"].includes(t.status)).length;
+ const done=tasks.filter(t=>t.status==="Finalizada").length;
+ const finals=tasks.filter(t=>t.status==="Finalizada"&&t.created_at&&t.updated_at);
+ let avg="-";
+ if(finals.length){
+   const mins=Math.round(finals.reduce((a,t)=>a+Math.max(0,new Date(t.updated_at)-new Date(t.created_at)),0)/finals.length/60000);
+   avg=mins+" min";
+ }
+ document.getElementById("kpis").innerHTML=
+   '<div class="kpi"><b>'+total+'</b><span>Total de reposiciones</span></div>'+
+   '<div class="kpi"><b>'+pending+'</b><span>Pendientes</span></div>'+
+   '<div class="kpi"><b>'+active+'</b><span>En proceso</span></div>'+
+   '<div class="kpi"><b>'+avg+'</b><span>Tiempo promedio finalizadas</span></div>';
+ document.getElementById("etvLoad").innerHTML=ETWS.map(e=>{
+   const open=tasks.filter(t=>t.etv_rf===e.rf&&t.status!=="Finalizada").length;
+   const fin=tasks.filter(t=>t.etv_rf===e.rf&&t.status==="Finalizada").length;
+   return '<div class="etvrow"><span>'+esc(e.name)+'</span><b>'+open+' activas · '+fin+' fin.</b></div>';
+ }).join("");
+}
 function testConn(){toast(connectedCount()>0?"✓ Conexión correcta.":"Todavía no conecta. Revisa el detalle de arriba.")}
-function assign(id,idx){if(connectedCount()===0)return toast("Sin conexión.");const t=tasks.find(x=>x.task_id===id);if(!t)return toast("Tarea no encontrada.");if(t.status==="Finalizada")return toast("No se puede reasignar una tarea finalizada.");const sel=document.getElementById("sel-"+idx),selectedRf=(pendingSelection[idx]||sel.value),e=ETWS.find(x=>x.rf===selectedRf);if(!e)return;const old=t.etv||"Sin asignar";t.etv=e.name;t.etv_rf=e.rf;t.updated_at=now();if(!publishState())return;publishNotif(TOPIC_NOTIF_PICK,id+": "+old+" → "+e.name);publishNotif(TOPIC_NOTIF_JUNIOR,"Tarea asignada a "+e.name+": "+id+" · P"+t.aisle+"/U"+t.location+" · "+t.instruction);delete pendingSelection[idx];toast("✓ ETV asignado: "+e.name);render()}
-function render(){const el=document.getElementById("list");if(!el)return;el.innerHTML=tasks.length?tasks.map((t,i)=>{const opts=ETWS.map(e=>`<option value="${e.rf}" ${e.rf===t.etv_rf?"selected":""}>${esc(e.name)} · ${e.rf}</option>`).join("");const dis=t.status==="Finalizada"?"disabled":"";return `<div class="task ${statusClass(t.status)}"><div class="head"><b>${esc(t.task_id)}</b><span class="badge">${esc(t.status)}</span></div><div class="meta">${esc(t.pickero||"Pickero")} · P${esc(t.aisle)} / U${esc(t.location)} · <span class="instr ${instrClass(t.instruction)}">${esc(t.instruction)}</span><br><span class="assigned">ETV actual: ${esc(t.etv||"Sin asignar")}</span></div><label>ETV asignado</label><select id="sel-${i}" ${dis} onchange="rememberSelection(${i},this.value)">${opts}</select><button type="button" class="blue" ${dis} onclick="assign('${esc(t.task_id)}',${i})">GUARDAR CAMBIO DE ETV</button></div>`}).join(""):'<div class="small">Sin tareas.</div>'}
+function assign(id,idx){
+ if(connectedCount()===0)return toast("Sin conexión.");
+ const t=tasks.find(x=>x.task_id===id);if(!t)return toast("Tarea no encontrada.");
+ if(t.status==="Finalizada")return toast("No se puede reasignar una tarea finalizada.");
+ const sel=document.getElementById("sel-"+idx),selectedRf=(pendingSelection[idx]||sel.value),e=ETWS.find(x=>x.rf===selectedRf);if(!e)return;
+ const old=t.etv||"Sin asignar";
+ t.etv=e.name;t.etv_rf=e.rf;t.updated_at=now();
+ t.history=Array.isArray(t.history)?t.history:[];
+ t.history.push({time:now(),actor:"Supervisor",action:"ETV: "+old+" → "+e.name});
+ if(!publishState())return;
+ publishNotif(TOPIC_NOTIF_PICK,id+": "+old+" → "+e.name);
+ publishNotif(TOPIC_NOTIF_JUNIOR,"Tarea asignada a "+e.name+": "+id+" · P"+t.aisle+"/U"+t.location+" · "+t.instruction);
+ delete pendingSelection[idx];
+ toast("✓ ETV asignado: "+e.name);
+ render();
+}
+function render(){
+ renderDashboard();
+ const el=document.getElementById("list");if(!el)return;
+ const q=(document.getElementById("searchBox")?.value||"").trim().toLowerCase();
+ const sf=document.getElementById("statusFilter")?.value||"";
+ const filtered=tasks.filter(t=>{
+   if(sf&&t.status!==sf)return false;
+   if(!q)return true;
+   const hay=[t.task_id,t.pickero,t.pickero_rf,t.etv,t.etv_rf,t.aisle,t.location,t.status,t.instruction].join(" ").toLowerCase();
+   return hay.includes(q);
+ });
+ const count=document.getElementById("resultCount");if(count)count.textContent=filtered.length+" resultado(s)";
+ el.innerHTML=filtered.length?filtered.map((t,i)=>{
+   const realIndex=tasks.indexOf(t);
+   const opts=ETWS.map(e=>`<option value="${e.rf}" ${e.rf===t.etv_rf?"selected":""}>${esc(e.name)} · ${e.rf}</option>`).join("");
+   const dis=t.status==="Finalizada"?"disabled":"";
+   return `<div class="task ${statusClass(t.status)}">
+     <div class="head"><b>${esc(t.task_id)}</b><span class="badge">${esc(t.status)}</span></div>
+     <div class="meta"><b>Pickero:</b> ${esc(t.pickero||"Pickero")} · <b>Ubicación:</b> P${esc(t.aisle)} / U${esc(t.location)} · <span class="instr ${instrClass(t.instruction)}">${esc(t.instruction)}</span><br>
+     <span class="assigned">ETV actual: ${esc(t.etv||"Sin asignar")}</span>
+     <div class="time">Creada: ${esc(fmtDate(t.created_at))} · Última actualización: ${esc(fmtDate(t.updated_at))}</div></div>
+     <label>ETV asignado</label><select id="sel-${realIndex}" ${dis} onchange="rememberSelection(${realIndex},this.value)">${opts}</select>
+     <button type="button" class="blue" ${dis} onclick="assign('${esc(t.task_id)}',${realIndex})">GUARDAR CAMBIO DE ETV</button>
+     ${historyHtml(t)}
+   </div>`;
+ }).join(""):'<div class="small">No se encontraron reposiciones con los filtros seleccionados.</div>';
+}
 render();startBrokers();
 </script></body></html>
