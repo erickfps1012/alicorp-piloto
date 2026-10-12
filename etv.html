@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ALICORP · App ETV</title><style>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ALICORP · Operación ETV</title><style>
 :root{--red:#c8102e;--red2:#8f0b22;--bg:#f4f6f8;--txt:#1f2937;--mut:#6b7280;--green:#15803d;--blue:#1d4ed8}
 *{box-sizing:border-box}html,body{max-width:100%;overflow-x:hidden}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt)}
@@ -38,7 +38,7 @@ button.blue{background:var(--blue)}button.green{background:var(--green)}button.g
 .diag{font-size:11px;color:#6b7280;margin-top:6px;word-break:break-word}
 @media(max-width:760px){.grid{grid-template-columns:1fr}header button{width:100%!important}.card{padding:13px}.wrap{padding:0 9px}}
 </style></head>
-<body><header><div><h1>ALICORP · App ETV</h1><div class="sub" id="etvIdentity">Selecciona tu usuario ETV</div></div><div><div id="conn" class="conn">Conectando...</div><div id="diag" class="diag"></div></div></header>
+<body><header><div><h1>ALICORP · Atención de Reposiciones ETV</h1><div class="sub" id="etvIdentity">Área de Despacho · Selecciona tu usuario ETV</div></div><div><div id="conn" class="conn">Conectando...</div><div id="diag" class="diag"></div></div></header>
 <div class="wrap">
 <div class="card" id="etvLogin">
   <h2>Ingreso ETV</h2>
@@ -56,7 +56,7 @@ button.blue{background:var(--blue)}button.green{background:var(--green)}button.g
   <button type="button" onclick="enterETV()">INGRESAR COMO ETV</button>
 </div>
 <div id="etvWork" class="hidden">
-<div class="note">Solo verás y podrás avanzar las tareas asignadas a tu usuario ETV.</div>
+<div class="note">Módulo operativo: visualiza únicamente tus reposiciones asignadas y actualiza su estado de atención.</div>
 <div class="warn">Abre esta página desde su enlace HTTPS en Chrome o Safari. Piloto con datos ficticios.</div>
 <div class="card"><h2>Mis reposiciones</h2><div id="list"></div><button type="button" class="gray" onclick="testConn()">PROBAR CONEXIÓN</button><button type="button" class="blue" onclick="askNotify()">🔔 ACTIVAR AVISOS</button></div></div></div><div id="toast" class="toast"></div>
 <script>
@@ -81,7 +81,7 @@ const ETV_USERS=[
 let CURRENT_ETV=null;
 let tasks=[],rev=0,ready=false,brokers=[],statusMap={};
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-function statusClass(s){return "s-"+String(s||"Pendiente").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/s+/g,"-")}
+function statusClass(s){return "s-"+String(s||"Pendiente").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g,"-")}
 function instrClass(s){s=String(s||"").toLowerCase();return s.includes("dejar")?"i-green":s.includes("hacer")?"i-yellow":"i-red"}
 function now(){return new Date().toISOString()}
 function toast(m){const t=document.getElementById("toast");if(t){t.textContent=m;t.style.display="block";setTimeout(()=>t.style.display="none",3800)}}
@@ -146,6 +146,8 @@ function advance(id,status){
  t.status=STATES[i+1];
  t.ewm_status=t.status==="Finalizada"?"CONFIRMED":"ASSIGNED";
  t.updated_at=now();
+ t.history=Array.isArray(t.history)?t.history:[];
+ t.history.push({time:t.updated_at,actor:CURRENT_ETV.name,action:"Estado → "+t.status});
  if(!publishState())return;
  publishNotif(TOPIC_NOTIF_PICK,id+": "+CURRENT_ETV.name+" → "+t.status);
  publishNotif(TOPIC_NOTIF_SUP,id+": "+CURRENT_ETV.name+" → "+t.status);
