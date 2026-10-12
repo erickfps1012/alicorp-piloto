@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>ALICORP · App Pickero</title><style>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>ALICORP · Operación Pickero</title><style>
 :root{--red:#c8102e;--red2:#8f0b22;--bg:#f4f6f8;--txt:#1f2937;--mut:#6b7280;--green:#15803d;--blue:#1d4ed8}
 *{box-sizing:border-box}html,body{max-width:100%;overflow-x:hidden}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt)}
@@ -38,7 +38,7 @@ button.blue{background:var(--blue)}button.green{background:var(--green)}button.g
 .diag{font-size:11px;color:#6b7280;margin-top:6px;word-break:break-word}
 @media(max-width:760px){.grid{grid-template-columns:1fr}header button{width:100%!important}.card{padding:13px}.wrap{padding:0 9px}}
 </style></head>
-<body><header><div><h1>ALICORP · App Pickero</h1><div class="sub" id="pickerIdentity">Selecciona tu usuario Pickero</div></div><div><div id="conn" class="conn">Conectando...</div><div id="diag" class="diag"></div></div></header>
+<body><header><div><h1>ALICORP · Solicitud de Reposición</h1><div class="sub" id="pickerIdentity">Área de Despacho · Selecciona tu usuario Pickero</div></div><div><div id="conn" class="conn">Conectando...</div><div id="diag" class="diag"></div></div></header>
 <div class="wrap">
 <div class="card" id="pickerLogin">
   <h2>Ingreso Pickero</h2>
@@ -55,8 +55,8 @@ button.blue{background:var(--blue)}button.green{background:var(--green)}button.g
   <button type="button" onclick="enterPicker()">INGRESAR COMO PICKERO</button>
 </div>
 <div id="pickerWork" class="hidden">
-<div class="note">Versión web para celular: abre esta aplicación desde una dirección HTTPS publicada, no desde una vista previa de archivo.</div>
-<div class="warn">Para el piloto usa datos ficticios. Abre esta página desde su enlace HTTPS en Chrome o Safari.</div>
+<div class="note">Módulo operativo para registrar solicitudes de reposición y realizar seguimiento de atención.</div>
+<div class="warn">Entorno piloto: utiliza únicamente datos de demostración.</div>
 <div class="legend"><span class="i-green">Dejar afuera</span><span class="i-yellow">Hacer cambio</span><span class="i-red">En proceso</span></div>
 <div class="card"><h2>Nueva reposición</h2><div class="grid">
 <div><label>Turno</label><select id="shift"><option>Miguel</option><option>Marisol</option><option>César</option></select></div>
@@ -90,7 +90,7 @@ const PICKER_USERS=[
 let CURRENT_PICKER=null;
 let tasks=[], rev=0, ready=false, brokers=[], statusMap={};
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-function statusClass(s){return "s-"+String(s||"Pendiente").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/s+/g,"-")}
+function statusClass(s){return "s-"+String(s||"Pendiente").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g,"-")}
 function instrClass(s){s=String(s||"").toLowerCase();return s.includes("dejar")?"i-green":s.includes("hacer")?"i-yellow":"i-red"}
 function now(){return new Date().toISOString()}
 function toast(m){const t=document.getElementById("toast");if(t){t.textContent=m;t.style.display="block";setTimeout(()=>t.style.display="none",3800)}}
@@ -165,7 +165,7 @@ function createTask(){
   const taskEl=document.getElementById("task"),shiftEl=document.getElementById("shift"),aisleEl=document.getElementById("aisle"),locationEl=document.getElementById("location"),instructionEl=document.getElementById("instruction"),observationEl=document.getElementById("observation");
   const id=(taskEl.value||"").trim()||("WT-PILOTO-"+Date.now());
   if(tasks.some(t=>t.task_id===id))return toast("La tarea ya existe.");
-  const autoETV=chooseBalancedETV();const x={task_id:id,pickero:CURRENT_PICKER.name,pickero_rf:CURRENT_PICKER.rf,shift:shiftEl.value,aisle:aisleEl.value,location:locationEl.value,instruction:instructionEl.value,observation:(observationEl.value||"").trim(),etv:autoETV.name,etv_rf:autoETV.rf,status:"Pendiente",ewm_status:"ASSIGNED",created_at:now(),updated_at:now(),assignment_mode:"AUTO_BALANCEADO"};
+  const autoETV=chooseBalancedETV();const created=now();const x={task_id:id,pickero:CURRENT_PICKER.name,pickero_rf:CURRENT_PICKER.rf,shift:shiftEl.value,aisle:aisleEl.value,location:locationEl.value,instruction:instructionEl.value,observation:(observationEl.value||"").trim(),etv:autoETV.name,etv_rf:autoETV.rf,status:"Pendiente",ewm_status:"ASSIGNED",created_at:created,updated_at:created,assignment_mode:"AUTO_BALANCEADO",history:[{time:created,actor:CURRENT_PICKER.name,action:"Solicitud generada y asignada a "+autoETV.name}]} ;
   tasks=[x,...tasks];
   if(!publishState())return;
   publishNotif(TOPIC_NOTIF_SUP,"Nueva reposición: "+id+" · "+CURRENT_PICKER.name+" · autoasignada a "+autoETV.name+" · P"+x.aisle+"/U"+x.location+" · "+x.instruction);publishNotif(TOPIC_NOTIF_JUNIOR,"Nueva reposición autoasignada a "+autoETV.name+": "+id+" · P"+x.aisle+"/U"+x.location);
