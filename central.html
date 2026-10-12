@@ -3,55 +3,81 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#c8102e"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
-<title>ALICORP · Sistema Central de Reposición</title>
+<meta name="theme-color" content="#c8102e">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>ALICORP · Sistema de Gestión de Reposición</title>
 <style>
-:root{--r:#c8102e;--r2:#8f0b22;--bg:#f4f6f8;--txt:#1f2937;--mut:#6b7280}
+:root{--r:#c8102e;--r2:#8f0b22;--bg:#f3f4f6;--txt:#111827;--mut:#6b7280;--line:#e5e7eb;--green:#15803d;--blue:#1d4ed8}
 *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt)}
-header{background:linear-gradient(135deg,var(--r),var(--r2));color:#fff;padding:16px}
-.head{max-width:1000px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-h1{margin:0;font-size:20px}.sub{font-size:12px;opacity:.9;margin-top:3px}
-.wrap{max-width:1000px;margin:16px auto;padding:0 10px}.card{background:#fff;border-radius:14px;padding:15px;box-shadow:0 4px 18px #0001;margin-bottom:14px}
-.note{font-size:12px;padding:10px 12px;border-radius:9px;background:#ecfdf5;color:#166534;border:1px solid #bbf7d0;margin-bottom:12px}
-.warn{font-size:12px;padding:10px 12px;border-radius:9px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;margin-bottom:12px}
-.roles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.role{border:1px solid #e5e7eb;border-top:6px solid var(--r);border-radius:12px;padding:15px;background:#fff}
-.role h2{margin:0 0 5px;font-size:18px}.role p{font-size:12px;color:var(--mut);min-height:34px}
-a.btn,button{display:block;width:100%;min-height:44px;padding:11px;border:0;border-radius:9px;background:var(--r);color:#fff;text-decoration:none;text-align:center;font-weight:800;font-size:15px;cursor:pointer}
-iframe{width:100%;height:76vh;border:0;border-radius:12px;background:white}
-.bar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:10px}.bar button{width:auto;background:#4b5563;min-height:38px;padding:8px 12px}
-.hidden{display:none}
-@media(max-width:720px){.roles{grid-template-columns:1fr}iframe{height:78vh}}
+header{background:linear-gradient(135deg,var(--r),var(--r2));color:#fff;padding:18px 16px;box-shadow:0 3px 14px #0002}
+.head{max-width:1120px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand h1{margin:0;font-size:22px}.brand .sub{font-size:12px;opacity:.92;margin-top:4px}.version{font-size:11px;background:#ffffff22;border:1px solid #ffffff44;padding:6px 9px;border-radius:999px}
+.wrap{max-width:1120px;margin:18px auto;padding:0 12px}
+.hero{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}
+.hero h2{margin:0 0 5px;font-size:20px}.hero p{margin:0;color:var(--mut);font-size:13px;max-width:720px;line-height:1.5}
+.status{font-size:12px;color:#166534;background:#ecfdf5;border:1px solid #bbf7d0;padding:8px 10px;border-radius:9px;font-weight:700}
+.roles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.role{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 3px 14px #0000000d;display:flex;flex-direction:column;min-height:205px}
+.icon{font-size:25px}.role h3{margin:10px 0 5px;font-size:17px}.role p{font-size:12px;color:var(--mut);line-height:1.5;margin:0 0 12px;flex:1}
+.role .tag{display:inline-block;width:max-content;font-size:10px;font-weight:800;padding:4px 7px;border-radius:999px;background:#f3f4f6;color:#374151;margin-bottom:8px}
+button{width:100%;min-height:44px;border:0;border-radius:9px;background:var(--r);color:#fff;font-weight:800;font-size:14px;cursor:pointer;padding:10px}
+button.secondary{background:#4b5563}
+.info{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}.info .box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}.info b{display:block;font-size:12px;margin-bottom:4px}.info span{font-size:11px;color:var(--mut);line-height:1.4}
+.workspace{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px}.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:2px 2px 10px}.bar b{font-size:14px}.bar button{width:auto;min-height:38px;padding:8px 11px;background:#4b5563}
+iframe{width:100%;height:78vh;border:1px solid var(--line);border-radius:10px;background:#fff}.hidden{display:none}
+.warning{font-size:11px;color:#92400e;background:#fff7ed;border:1px solid #fed7aa;border-radius:9px;padding:9px 10px;margin-top:14px}
+@media(max-width:900px){.roles{grid-template-columns:repeat(2,1fr)}.info{grid-template-columns:1fr}}
+@media(max-width:560px){.roles{grid-template-columns:1fr}.brand h1{font-size:19px}.hero{padding:13px}.role{min-height:auto}iframe{height:80vh}}
 </style>
 </head>
 <body>
-<header><div class="head"><div><h1>ALICORP · Sistema Central de Reposición</h1><div class="sub">Piloto integrado para Pickero, Supervisor y ETV</div></div></div></header>
+<header><div class="head">
+<div class="brand"><h1>ALICORP · Sistema de Gestión de Reposición</h1><div class="sub">Área de Despacho · Control operativo de reposiciones</div></div>
+<div class="version">VERSIÓN PILOTO OPERATIVA</div>
+</div></header>
+
 <div class="wrap">
 <div id="home">
-<div class="note">Desde este único sistema puedes entrar al flujo completo de reposición. Las tres funciones comparten la misma información del piloto.</div>
-<div class="warn">Modo piloto: no usar datos reales o confidenciales de Alicorp. La conexión con SAP EWM real todavía no está habilitada.</div>
-<div class="roles">
-<div class="role"><h2>👷 Pickero</h2><p>Pickers: Yasmani León, César Ramos, Omar Teves, Leonardo Iturrizaga, Jesús Chávez y Antony Palacios.</p><button onclick="openRole('pickero.html','Pickero')">ENTRAR COMO PICKERO</button></div>
-<div class="role"><h2>🖥 Supervisor</h2><p>Asigna o cambia el ETV responsable de cada reposición.</p><button onclick="openRole('supervisor.html','Supervisor')">ENTRAR COMO SUPERVISOR</button></div>
-<div class="role"><h2>🚜 ETV</h2><p>Cada operador ETV ingresa con su usuario y ve solo las tareas que tiene asignadas.</p><button onclick="openRole('etv.html','ETV')">ENTRAR COMO ETV</button></div>
-<div class="role"><h2>📊 Registro en vivo</h2><p>Tabla tipo Excel que se actualiza automáticamente con cada reposición y cambio de estado.</p><button onclick="openRole('registro.html','Registro en vivo')">ABRIR REGISTRO</button></div>
+<section class="hero">
+<div><h2>Centro de operación</h2><p>Gestiona el flujo de reposición desde la solicitud del pickero hasta la atención del ETV, con asignación automática, supervisión y registro en vivo.</p></div>
+<div class="status">● Sistema operativo para pruebas</div>
+</section>
+
+<section class="roles">
+<article class="role"><div class="icon">👷</div><span class="tag">OPERACIÓN</span><h3>Pickero</h3><p>Genera solicitudes de reposición, recibe un ETV asignado automáticamente y realiza seguimiento de sus tareas.</p><button onclick="openRole('pickero.html','Operación · Pickero')">INGRESAR</button></article>
+<article class="role"><div class="icon">🖥️</div><span class="tag">CONTROL</span><h3>Supervisor</h3><p>Visualiza indicadores, controla la cola de reposiciones y reasigna ETV cuando la operación lo requiere.</p><button onclick="openRole('supervisor.html','Supervisión y control')">ABRIR PANEL</button></article>
+<article class="role"><div class="icon">🚜</div><span class="tag">EJECUCIÓN</span><h3>ETV</h3><p>Cada operador ingresa con su usuario, visualiza sus reposiciones asignadas y actualiza el estado de atención.</p><button onclick="openRole('etv.html','Operación · ETV')">INGRESAR</button></article>
+<article class="role"><div class="icon">📊</div><span class="tag">TRAZABILIDAD</span><h3>Registro en vivo</h3><p>Consulta la trazabilidad de todas las reposiciones y descarga la información para trabajarla en Excel.</p><button onclick="openRole('registro.html','Registro y trazabilidad')">ABRIR REGISTRO</button></article>
+</section>
+
+<section class="info">
+<div class="box"><b>Asignación automática</b><span>El sistema equilibra la carga y da mayor prioridad a Junior Llerena, Junior Rojas y Jhony Luna.</span></div>
+<div class="box"><b>Estados operativos</b><span>Pendiente → Tomada → En camino → En ubicación → Reposición realizada → Finalizada.</span></div>
+<div class="box"><b>Trazabilidad</b><span>Se registra pickero, ETV, ubicación, indicación, estado y última actualización.</span></div>
+</section>
+
+<div class="warning">Entorno de demostración. No utilizar información real, sensible o confidencial de Alicorp. La integración directa con SAP EWM todavía no está habilitada.</div>
+</div>
+
+<div id="workspace" class="workspace hidden">
+<div class="bar"><b id="roleTitle"></b><button class="secondary" onclick="backHome()">VOLVER AL INICIO</button></div>
+<iframe id="roleFrame" title="Sistema de gestión de reposición"></iframe>
 </div>
 </div>
-<div id="workspace" class="hidden">
-<div class="bar"><b id="roleTitle"></b><button onclick="backHome()">CAMBIAR USUARIO</button></div>
-<iframe id="roleFrame" title="Sistema de reposición"></iframe>
-</div>
-</div>
+
 <script>
 function openRole(page,title){
- document.getElementById('home').classList.add('hidden');
- document.getElementById('workspace').classList.remove('hidden');
- document.getElementById('roleTitle').textContent=title;
- document.getElementById('roleFrame').src=page+'?v='+Date.now();
+ document.getElementById("home").classList.add("hidden");
+ document.getElementById("workspace").classList.remove("hidden");
+ document.getElementById("roleTitle").textContent=title;
+ document.getElementById("roleFrame").src=page+"?v="+Date.now();
+ window.scrollTo({top:0,behavior:"smooth"});
 }
 function backHome(){
- document.getElementById('roleFrame').src='about:blank';
- document.getElementById('workspace').classList.add('hidden');
- document.getElementById('home').classList.remove('hidden');
+ document.getElementById("roleFrame").src="about:blank";
+ document.getElementById("workspace").classList.add("hidden");
+ document.getElementById("home").classList.remove("hidden");
 }
 </script>
 </body>
