@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>ALICORP · Dashboard Gerencial</title>
+<style>
+:root{--r:#c8102e;--r2:#8f0b22;--bg:#f3f4f6;--txt:#111827;--mut:#6b7280;--line:#e5e7eb;--green:#15803d;--blue:#1d4ed8;--orange:#c2410c;--yellow:#a16207;--gray:#4b5563}
+*{box-sizing:border-box}html,body{max-width:100%;overflow-x:hidden}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt)}
+header{background:linear-gradient(135deg,var(--r),var(--r2));color:#fff;padding:17px 16px}
+.head{max-width:1180px;margin:auto;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+h1{margin:0;font-size:21px}.sub{font-size:12px;opacity:.92;margin-top:4px}
+.conn{font-size:11px;font-weight:800;padding:6px 9px;border-radius:999px;background:#fee2e2;color:#991b1b}.conn.ok{background:#dcfce7;color:#166534}
+.diag{font-size:10px;opacity:.86;margin-top:4px;text-align:right}
+.wrap{max-width:1180px;margin:16px auto;padding:0 10px}
+.note{font-size:12px;padding:10px 12px;border-radius:10px;background:#fff;border:1px solid var(--line);color:#374151;margin-bottom:12px}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px;box-shadow:0 3px 12px #0000000b}
+.kpi b{display:block;font-size:25px;line-height:1.1}.kpi span{font-size:11px;color:var(--mut)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{background:#fff;border:1px solid var(--line);border-radius:13px;padding:14px;box-shadow:0 3px 12px #0000000b}
+.card h2{font-size:15px;margin:0 0 11px}.small{font-size:11px;color:var(--mut)}
+.barrow{display:grid;grid-template-columns:minmax(110px,1.2fr) 3fr 56px;gap:8px;align-items:center;margin:9px 0}
+.name{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track{height:11px;background:#f3f4f6;border-radius:999px;overflow:hidden;border:1px solid #e5e7eb}
+.fill{height:100%;background:var(--r);border-radius:999px;min-width:2px}
+.value{text-align:right;font-size:11px;font-weight:800}
+.statusgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.statusbox{border:1px solid var(--line);border-radius:10px;padding:10px}
+.statusbox b{display:block;font-size:19px}.statusbox span{font-size:11px;color:var(--mut)}
+.s-pendiente{border-left:5px solid #6b7280}.s-tomada{border-left:5px solid #2563eb}.s-en-camino{border-left:5px solid #f59e0b}.s-en-ubicacion{border-left:5px solid #eab308}.s-reposicion-realizada{border-left:5px solid #16a34a}.s-finalizada{border-left:5px solid #166534}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:12px}
+table{border-collapse:collapse;width:100%;min-width:760px}th,td{padding:8px;border-bottom:1px solid var(--line);font-size:11px;text-align:left}th{background:#111827;color:#fff;white-space:nowrap}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}button{border:0;border-radius:9px;padding:9px 12px;min-height:40px;background:var(--r);color:#fff;font-weight:800;cursor:pointer}.gray{background:#4b5563}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
+@media(max-width:560px){.kpis{grid-template-columns:1fr 1fr}.barrow{grid-template-columns:100px 1fr 46px}}
+</style>
+</head>
+<body>
+<header><div class="head">
+<div><h1>ALICORP · Dashboard Gerencial</h1><div class="sub">Área de Despacho · Indicadores de reposición</div></div>
+<div><div id="conn" class="conn">Conectando...</div><div id="diag" class="diag"></div></div>
+</div></header>
+
+<div class="wrap">
+<div class="note">Vista ejecutiva del piloto. Los indicadores se calculan con las reposiciones registradas en el sistema y se actualizan automáticamente.</div>
+
+<div class="actions">
+<button type="button" onclick="location.reload()">ACTUALIZAR</button>
+<button type="button" class="gray" onclick="window.print()">IMPRIMIR / GUARDAR PDF</button>
+</div>
+
+<div id="kpis" class="kpis"></div>
+
+<div class="grid">
+  <section class="card"><h2>Reposiciones por Pickero</h2><div id="pickerBars"></div></section>
+  <section class="card"><h2>Reposiciones por ETV</h2><div id="etvBars"></div></section>
+  <section class="card"><h2>Distribución por estado</h2><div id="statusGrid" class="statusgrid"></div></section>
+  <section class="card"><h2>Desempeño de ETV</h2><div id="etvPerformance"></div></section>
+</div>
+
+<section class="card" style="margin-top:12px">
+<h2>Resumen operativo</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Indicador</th><th>Resultado</th><th>Lectura</th></tr></thead>
+<tbody id="summaryRows"></tbody>
+</table></div>
+<div id="updated" class="small" style="margin-top:8px">Esperando sincronización...</div>
+</section>
+</div>
+
+<script>
+const ROLE="dashboard";
+const BASE="alicorp/piloto/33cda81c433f09c0aa4b479f";
+const TOPIC_STATE=BASE+"/state";
+const BROKERS=[["Shiftr","wss://public.cloud.shiftr.io","public","public"]];
+const PICKERS=[
+ {rf:"YLEON",name:"Yasmani León"},{rf:"CRAMOS",name:"César Ramos"},{rf:"OTEVES",name:"Omar Teves"},
+ {rf:"LITURRIZAGA",name:"Leonardo Iturrizaga"},{rf:"JCHAVEZ",name:"Jesús Chávez"},{rf:"APALACIOS",name:"Antony Palacios"}
+];
+const ETWS=[
+ {rf:"AAREVALO",name:"Álex Arévalo"},{rf:"JROJAS",name:"Junior Rojas"},{rf:"JLLERENA",name:"Junior Llerena"},
+ {rf:"LUNA",name:"Jhony Luna"},{rf:"RUFASTO",name:"Ernesto Rufasto"},{rf:"MVIVANCO",name:"Marco Vivanco"},{rf:"RHUAMAN",name:"Roberto Huamán"}
+];
+const STATES=["Pendiente","Tomada","En camino","En ubicación","Reposición realizada","Finalizada"];
+let tasks=[],rev=0,ready=false,brokers=[],statusMap={};
+
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function connectedCount(){return brokers.filter(b=>b.connected).length}
+function updateConn(){
+ const n=connectedCount(),c=document.getElementById("conn"),d=document.getElementById("diag");
+ if(c){if(n>0){c.textContent="Servidor conectado (1/1)";c.className="conn ok"}else{c.textContent="Conectando...";c.className="conn"}}
+ if(d)d.textContent=Object.entries(statusMap).map(([k,v])=>k+": "+v).join(" · ");
+}
+function brokerStatus(b,ok,msg){statusMap[b.name]=msg;updateConn()}
+function brokerMessage(b,topic,msg){
+ if(topic!==TOPIC_STATE)return;
+ try{
+   const obj=JSON.parse(msg),incomingRev=Number(obj.rev||0);
+   if(incomingRev>=rev){rev=incomingRev;tasks=Array.isArray(obj.tasks)?obj.tasks:[];ready=true;render()}
+ }catch(e){}
+}
+function startBrokers(){
+ statusMap={};
+ brokers=BROKERS.map(([name,url,user,pass])=>new MiniMQTT(url,name,brokerStatus,brokerMessage,user,pass));
+ brokers.forEach(b=>b.connect());
+ setTimeout(()=>{if(!ready){ready=true;render()}},3500);
+ setTimeout(()=>{if(connectedCount()===0){const c=document.getElementById("conn");if(c)c.textContent="Reintentando conexión..."}},7000);
+}
+function countBy(key,val){return tasks.filter(t=>t[key]===val).length}
+function pct(n,d){return d?Math.round(n*100/d):0}
+function avgMinutes(list){
+ const valid=list.filter(t=>t.created_at&&t.updated_at);
+ if(!valid.length)return null;
+ const ms=valid.reduce((a,t)=>a+Math.max(0,new Date(t.updated_at)-new Date(t.created_at)),0)/valid.length;
+ return Math.round(ms/60000);
+}
+function barRows(items,total){
+ const max=Math.max(1,...items.map(x=>x.value));
+ return items.map(x=>'<div class="barrow"><div class="name" title="'+esc(x.name)+'">'+esc(x.name)+'</div><div class="track"><div class="fill" style="width:'+Math.round(x.value*100/max)+'%"></div></div><div class="value">'+x.value+'</div></div>').join("");
+}
+function stateClass(s){return "s-"+String(s||"Pendiente").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,"-")}
+function render(){
+ const total=tasks.length;
+ const pending=countBy("status","Pendiente");
+ const active=tasks.filter(t=>!["Pendiente","Finalizada"].includes(t.status)).length;
+ const done=countBy("status","Finalizada");
+ const donePct=pct(done,total);
+ const avg=avgMinutes(tasks.filter(t=>t.status==="Finalizada"));
+ document.getElementById("kpis").innerHTML=
+   '<div class="kpi"><b>'+total+'</b><span>Total reposiciones</span></div>'+
+   '<div class="kpi"><b>'+pending+'</b><span>Pendientes</span></div>'+
+   '<div class="kpi"><b>'+active+'</b><span>En proceso</span></div>'+
+   '<div class="kpi"><b>'+donePct+'%</b><span>Finalizadas</span></div>'+
+   '<div class="kpi"><b>'+(avg===null?"-":avg+" min")+'</b><span>Tiempo promedio finalizadas</span></div>';
+
+ const pickerData=PICKERS.map(p=>({name:p.name,value:tasks.filter(t=>t.pickero_rf===p.rf).length})).sort((a,b)=>b.value-a.value);
+ const etvData=ETWS.map(e=>({name:e.name,value:tasks.filter(t=>t.etv_rf===e.rf).length})).sort((a,b)=>b.value-a.value);
+ document.getElementById("pickerBars").innerHTML=barRows(pickerData,total)||'<div class="small">Sin información.</div>';
+ document.getElementById("etvBars").innerHTML=barRows(etvData,total)||'<div class="small">Sin información.</div>';
+
+ document.getElementById("statusGrid").innerHTML=STATES.map(s=>{
+   const n=countBy("status",s);
+   return '<div class="statusbox '+stateClass(s)+'"><b>'+n+'</b><span>'+esc(s)+' · '+pct(n,total)+'%</span></div>';
+ }).join("");
+
+ document.getElementById("etvPerformance").innerHTML=ETWS.map(e=>{
+   const mine=tasks.filter(t=>t.etv_rf===e.rf),fin=mine.filter(t=>t.status==="Finalizada");
+   const m=avgMinutes(fin);
+   return '<div class="barrow"><div class="name">'+esc(e.name)+'</div><div class="small">'+fin.length+' finalizadas'+(m===null?"":" · "+m+" min prom.")+'</div><div class="value">'+pct(fin.length,mine.length)+'%</div></div>';
+ }).join("");
+
+ const mostPicker=pickerData[0]&&pickerData[0].value?pickerData[0]:null;
+ const mostEtv=etvData[0]&&etvData[0].value?etvData[0]:null;
+ const pendingPct=pct(pending,total);
+ document.getElementById("summaryRows").innerHTML=
+  '<tr><td>Cumplimiento</td><td>'+donePct+'%</td><td>'+done+' de '+total+' reposiciones finalizadas</td></tr>'+
+  '<tr><td>Pendientes</td><td>'+pendingPct+'%</td><td>'+pending+' solicitudes aún sin avanzar</td></tr>'+
+  '<tr><td>Mayor volumen Pickero</td><td>'+(mostPicker?esc(mostPicker.name):"-")+'</td><td>'+(mostPicker?mostPicker.value+" reposiciones":"Sin datos")+'</td></tr>'+
+  '<tr><td>Mayor volumen ETV</td><td>'+(mostEtv?esc(mostEtv.name):"-")+'</td><td>'+(mostEtv?mostEtv.value+" reposiciones asignadas":"Sin datos")+'</td></tr>'+
+  '<tr><td>Tiempo promedio</td><td>'+(avg===null?"-":avg+" min")+'</td><td>Calculado sobre tareas finalizadas</td></tr>';
+ document.getElementById("updated").textContent="Última actualización: "+new Date().toLocaleString("es-PE");
+}
+
+class MiniMQTT{
+constructor(url,name,onStatus,onMessage,username="",password=""){this.url=url;this.name=name;this.onStatus=onStatus;this.onMessage=onMessage;this.username=username;this.password=password;this.ws=null;this.connected=false;this.packetId=1;this.buf=new Uint8Array(0);this.keepTimer=null;this.reTimer=null;this.closedByUser=false}
+u8(s){if(window.TextEncoder)return new TextEncoder().encode(s);const x=unescape(encodeURIComponent(s)),a=new Uint8Array(x.length);for(let i=0;i<x.length;i++)a[i]=x.charCodeAt(i);return a}
+s8(a){if(window.TextDecoder)return new TextDecoder().decode(a);let s="";for(let i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);try{return decodeURIComponent(escape(s))}catch(e){return s}}
+mstr(s){const b=this.u8(s),o=new Uint8Array(2+b.length);o[0]=(b.length>>8)&255;o[1]=b.length&255;o.set(b,2);return o}
+concat(...arrs){let n=0;arrs.forEach(a=>n+=a.length);const o=new Uint8Array(n);let p=0;arrs.forEach(a=>{o.set(a,p);p+=a.length});return o}
+rem(n){const a=[];do{let d=n%128;n=Math.floor(n/128);if(n>0)d|=128;a.push(d)}while(n>0);return new Uint8Array(a)}
+pack(h,payload){return this.concat(new Uint8Array([h]),this.rem(payload.length),payload)}
+connectPacket(){const proto=this.mstr("MQTT"),hasAuth=!!this.username,flags=hasAuth?194:2,vh=this.concat(proto,new Uint8Array([4,flags,0,30])),cid=this.mstr("alicorp_"+ROLE+"_"+Math.random().toString(16).slice(2,10)),auth=hasAuth?this.concat(this.mstr(this.username),this.mstr(this.password||"")):new Uint8Array(0);return this.pack(0x10,this.concat(vh,cid,auth))}
+subscribePacket(topic){this.packetId=(this.packetId%65535)+1;const pid=new Uint8Array([(this.packetId>>8)&255,this.packetId&255]),body=this.concat(pid,this.mstr(topic),new Uint8Array([0]));return this.pack(0x82,body)}
+connect(){this.closedByUser=false;try{this.onStatus(this,false,"conectando");this.ws=new WebSocket(this.url,["mqtt"]);this.ws.binaryType="arraybuffer";this.ws.onopen=()=>{try{this.ws.send(this.connectPacket())}catch(e){this.fail("envío CONNECT")}};this.ws.onmessage=ev=>{const incoming=new Uint8Array(ev.data);this.buf=this.concat(this.buf,incoming);this.parse()};this.ws.onerror=()=>this.onStatus(this,false,"error");this.ws.onclose=()=>{this.connected=false;clearInterval(this.keepTimer);this.onStatus(this,false,"cerrado");if(!this.closedByUser){clearTimeout(this.reTimer);this.reTimer=setTimeout(()=>this.connect(),3500)}}}catch(e){this.onStatus(this,false,"bloqueado")}}
+fail(msg){this.onStatus(this,false,msg);try{this.ws.close()}catch(e){}}
+parse(){while(this.buf.length>=2){let mul=1,rem=0,i=1,d;do{if(i>=this.buf.length)return;d=this.buf[i++];rem+=(d&127)*mul;mul*=128;if(mul>128*128*128*128)return this.fail("paquete inválido")}while(d&128);if(this.buf.length<i+rem)return;const h=this.buf[0],p=this.buf.slice(i,i+rem);this.buf=this.buf.slice(i+rem);const type=h>>4;if(type===2){if(p.length>=2&&p[1]===0){this.connected=true;this.onStatus(this,true,"conectado");clearInterval(this.keepTimer);this.keepTimer=setInterval(()=>{if(this.connected&&this.ws&&this.ws.readyState===1)this.ws.send(new Uint8Array([0xC0,0x00]))},20000);this.subscribe(TOPIC_STATE)}else this.fail("CONNACK rechazado")}else if(type===3){if(p.length<2)continue;const len=(p[0]<<8)|p[1];if(p.length<2+len)continue;const topic=this.s8(p.slice(2,2+len)),msg=this.s8(p.slice(2+len));this.onMessage(this,topic,msg)}}}
+subscribe(topic){if(this.connected&&this.ws&&this.ws.readyState===1){try{this.ws.send(this.subscribePacket(topic))}catch(e){}}}
+}
+render();startBrokers();
+</script>
+</body>
+</html>
