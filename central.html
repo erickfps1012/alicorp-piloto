@@ -18,7 +18,7 @@ header{background:linear-gradient(135deg,var(--r),var(--r2));color:#fff;padding:
 .hero{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}
 .hero h2{margin:0 0 5px;font-size:20px}.hero p{margin:0;color:var(--mut);font-size:13px;max-width:720px;line-height:1.5}
 .status{font-size:12px;color:#166534;background:#ecfdf5;border:1px solid #bbf7d0;padding:8px 10px;border-radius:9px;font-weight:700}
-.roles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.role{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 3px 14px #0000000d;display:flex;flex-direction:column;min-height:205px}
+.roles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}.role{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 3px 14px #0000000d;display:flex;flex-direction:column;min-height:205px}
 .icon{font-size:25px}.role h3{margin:10px 0 5px;font-size:17px}.role p{font-size:12px;color:var(--mut);line-height:1.5;margin:0 0 12px;flex:1}
 .role .tag{display:inline-block;width:max-content;font-size:10px;font-weight:800;padding:4px 7px;border-radius:999px;background:#f3f4f6;color:#374151;margin-bottom:8px}
 button{width:100%;min-height:44px;border:0;border-radius:9px;background:var(--r);color:#fff;font-weight:800;font-size:14px;cursor:pointer;padding:10px}
@@ -49,6 +49,7 @@ iframe{width:100%;height:78vh;border:1px solid var(--line);border-radius:10px;ba
 <article class="role"><div class="icon">🖥️</div><span class="tag">CONTROL</span><h3>Supervisor</h3><p>Visualiza indicadores, controla la cola de reposiciones y reasigna ETV cuando la operación lo requiere.</p><button onclick="openRole('supervisor.html','Supervisión y control')">ABRIR PANEL</button></article>
 <article class="role"><div class="icon">🚜</div><span class="tag">EJECUCIÓN</span><h3>ETV</h3><p>Cada operador ingresa con su usuario, visualiza sus reposiciones asignadas y actualiza el estado de atención.</p><button onclick="openRole('etv.html','Operación · ETV')">INGRESAR</button></article>
 <article class="role"><div class="icon">📊</div><span class="tag">TRAZABILIDAD</span><h3>Registro en vivo</h3><p>Consulta la trazabilidad de todas las reposiciones y descarga la información para trabajarla en Excel.</p><button onclick="openRole('registro.html','Registro y trazabilidad')">ABRIR REGISTRO</button></article>
+<article class="role"><div class="icon">📈</div><span class="tag">INDICADORES</span><h3>Dashboard gerencial</h3><p>Consulta productividad, cumplimiento, tiempos promedio y distribución de reposiciones por Pickero y ETV.</p><button onclick="openRole('dashboard.html','Dashboard gerencial')">VER INDICADORES</button></article>
 </section>
 
 <section class="info">
