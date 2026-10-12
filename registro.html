@@ -4,66 +4,85 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>ALICORP · Registro en vivo</title>
 <style>
-:root{--r:#c8102e;--r2:#8f0b22;--bg:#f4f6f8;--txt:#1f2937;--mut:#6b7280;--green:#15803d}
-*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt)}
+:root{--r:#c8102e;--r2:#8f0b22;--bg:#f4f6f8;--txt:#1f2937;--mut:#6b7280}
+*{box-sizing:border-box}html,body{max-width:100%;overflow-x:hidden}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt)}
 header{background:linear-gradient(135deg,var(--r),var(--r2));color:#fff;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-h1{margin:0;font-size:20px}.sub{font-size:12px;opacity:.9;margin-top:3px}.wrap{max-width:1200px;margin:14px auto;padding:0 10px}
-.card{background:#fff;border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 4px 16px #0001}.note{font-size:12px;padding:10px;border-radius:9px;background:#ecfdf5;color:#166534;border:1px solid #bbf7d0}
+h1{margin:0;font-size:20px}.sub{font-size:12px;opacity:.92;margin-top:3px}
+.wrap{max-width:1200px;margin:14px auto;padding:0 10px}.card{background:#fff;border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 4px 16px #0001}
+.note{font-size:12px;padding:10px;border-radius:9px;background:#ecfdf5;color:#166534;border:1px solid #bbf7d0}
 .conn{padding:6px 9px;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:11px;font-weight:800}.conn.ok{background:#dcfce7;color:#166534}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.stat{border:1px solid #e5e7eb;border-radius:10px;padding:10px}.stat b{display:block;font-size:22px}.stat span{font-size:11px;color:var(--mut)}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}button{border:0;border-radius:9px;min-height:42px;padding:9px 12px;background:var(--r);color:#fff;font-weight:800;cursor:pointer}button.gray{background:#4b5563}
-.tablewrap{overflow-x:auto;border:1px solid #e5e7eb;border-radius:10px}table{border-collapse:collapse;width:100%;min-width:1250px;background:#fff}th,td{border-bottom:1px solid #e5e7eb;padding:8px;font-size:11px;text-align:left;vertical-align:top}th{position:sticky;top:0;background:#111827;color:#fff;z-index:2;white-space:nowrap}.empty{text-align:center;color:var(--mut);padding:24px}
+.tablewrap{overflow-x:auto;border:1px solid #e5e7eb;border-radius:10px}table{border-collapse:collapse;width:100%;min-width:1250px;background:#fff}th,td{border-bottom:1px solid #e5e7eb;padding:8px;font-size:11px;text-align:left;vertical-align:top}th{background:#111827;color:#fff;white-space:nowrap}.empty{text-align:center;color:var(--mut);padding:24px}
 .pill{display:inline-block;padding:4px 7px;border-radius:999px;font-weight:800;font-size:10px}.p-green{background:#dcfce7;color:#166534}.p-yellow{background:#fef9c3;color:#854d0e}.p-red{background:#fee2e2;color:#991b1b}
-.small{font-size:11px;color:var(--mut);margin-top:7px}
-@media(max-width:650px){.stats{grid-template-columns:1fr 1fr}header{align-items:flex-start}}
+.small{font-size:11px;color:var(--mut);margin-top:7px}.diag{font-size:10px;opacity:.86;margin-top:4px}
+@media(max-width:650px){.stats{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
 <header>
 <div><h1>ALICORP · Registro de reposiciones en vivo</h1><div class="sub">Se actualiza automáticamente cuando cambia el sistema</div></div>
-<div><div id="conn" class="conn">Conectando...</div><div id="diag" style="font-size:10px;opacity:.85;margin-top:4px"></div></div>
+<div><div id="conn" class="conn">Conectando...</div><div id="diag" class="diag"></div></div>
 </header>
 <div class="wrap">
 <div class="card">
-<div class="note">Cuando un pickero genera una reposición, aparecerá aquí automáticamente. Si el Supervisor cambia el ETV o el operador avanza el estado, la misma fila se actualizará.</div>
-<div class="actions"><button onclick="downloadCsv()">DESCARGAR PARA EXCEL</button><button class="gray" onclick="location.reload()">ACTUALIZAR PÁGINA</button></div>
+<div class="note">Cuando un pickero genera una reposición aparecerá aquí automáticamente. Si cambia el ETV o el estado, se actualizará la misma fila.</div>
+<div class="actions"><button type="button" onclick="downloadCsv()">DESCARGAR PARA EXCEL</button><button type="button" class="gray" onclick="location.reload()">ACTUALIZAR PÁGINA</button></div>
 <div class="small" id="updated">Esperando sincronización...</div>
 </div>
 <div class="card"><div id="stats" class="stats"></div></div>
 <div class="card">
-<div class="tablewrap">
-<table>
-<thead><tr>
-<th>ID Tarea</th><th>Fecha</th><th>Hora</th><th>Pickero</th><th>RF Pickero</th><th>Turno</th><th>Pasillo</th><th>Ubicación</th><th>Indicación</th><th>Observación</th><th>ETV</th><th>RF ETV</th><th>Estado</th><th>EWM</th><th>Asignación</th><th>Última actualización</th>
-</tr></thead>
+<div class="tablewrap"><table>
+<thead><tr><th>ID Tarea</th><th>Fecha</th><th>Hora</th><th>Pickero</th><th>RF Pickero</th><th>Turno</th><th>Pasillo</th><th>Ubicación</th><th>Indicación</th><th>Observación</th><th>ETV</th><th>RF ETV</th><th>Estado</th><th>EWM</th><th>Asignación</th><th>Última actualización</th></tr></thead>
 <tbody id="rows"><tr><td colspan="16" class="empty">Esperando reposiciones...</td></tr></tbody>
-</table>
-</div>
+</table></div>
 </div>
 </div>
 <script>
-const ROLE="registro"; const NOTIF_TOPIC="alicorp/piloto/33cda81c433f09c0aa4b479f/notif/registro";
+const ROLE="registro";
+const NOTIF_TOPIC="alicorp/piloto/33cda81c433f09c0aa4b479f/notif/registro";
 const BASE="alicorp/piloto/33cda81c433f09c0aa4b479f";
 const TOPIC_STATE=BASE+"/state";
 const BROKERS=[["Shiftr","wss://public.cloud.shiftr.io","public","public"],["EMQX","wss://broker.emqx.io:8084/mqtt","",""],["Mosquitto","wss://test.mosquitto.org:8081/mqtt","",""]];
-let tasks=[],rev=0,brokers=[],statusMap={};
+let tasks=[],rev=0,ready=false,brokers=[],statusMap={};
+
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function connectedCount(){return brokers.filter(b=>b.connected).length}
-function updateConn(){const n=connectedCount(),e=document.getElementById("conn");e.textContent=n?"Servidor conectado ("+n+"/"+BROKERS.length+")":"Conectando...";e.className=n?"conn ok":"conn"}
-function brokerStatus(b,ok,msg){statusMap[b.name]=msg;updateConn();const d=document.getElementById("diag");if(d)d.textContent=Object.entries(statusMap).map(([k,v])=>k+": "+v).join(" · ")}
+function updateConn(){
+ const n=connectedCount(),c=document.getElementById("conn"),d=document.getElementById("diag");
+ if(c){if(n>0){c.textContent="Servidor conectado ("+n+"/"+BROKERS.length+")";c.className="conn ok"}else{c.textContent="Conectando...";c.className="conn"}}
+ if(d)d.textContent=Object.entries(statusMap).map(([k,v])=>k+": "+v).join(" · ");
+}
+function brokerStatus(b,ok,msg){statusMap[b.name]=msg;updateConn()}
 function brokerMessage(b,topic,msg){
  if(topic!==TOPIC_STATE)return;
  try{
-  const o=JSON.parse(msg),r=Number(o.rev||0);
-  if(r>=rev){rev=r;tasks=Array.isArray(o.tasks)?o.tasks:[];render()}
+   const obj=JSON.parse(msg),incomingRev=Number(obj.rev||0);
+   if(incomingRev>=rev){
+     rev=incomingRev;
+     tasks=Array.isArray(obj.tasks)?obj.tasks:[];
+     ready=true;
+     render();
+   }
  }catch(e){}
+}
+function startBrokers(){
+ statusMap={};
+ brokers=BROKERS.map(([name,url,user,pass])=>new MiniMQTT(url,name,brokerStatus,brokerMessage,user,pass));
+ brokers.forEach(b=>b.connect());
+ setTimeout(()=>{if(!ready){ready=true;render()}},3500);
+ setTimeout(()=>{if(connectedCount()===0){const c=document.getElementById("conn");if(c)c.textContent="Sin conexión al servidor"}},14000);
 }
 function fmtDate(v){if(!v)return"";const d=new Date(v);return isNaN(d)?"":d.toLocaleDateString("es-PE")}
 function fmtTime(v){if(!v)return"";const d=new Date(v);return isNaN(d)?"":d.toLocaleTimeString("es-PE",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}
 function fmtFull(v){if(!v)return"";const d=new Date(v);return isNaN(d)?"":d.toLocaleString("es-PE")}
 function instrClass(s){s=String(s||"").toLowerCase();return s.includes("dejar")?"p-green":s.includes("hacer")?"p-yellow":"p-red"}
+
 function render(){
  const body=document.getElementById("rows");
  body.innerHTML=tasks.length?tasks.map(t=>`<tr>
@@ -84,12 +103,17 @@ function render(){
  <div class="stat"><b>${done}</b><span>Finalizadas</span></div>`;
  document.getElementById("updated").textContent="Última sincronización: "+new Date().toLocaleString("es-PE");
 }
+
 function csvCell(v){const s=String(v??"").replace(/"/g,'""');return '"'+s+'"'}
 function downloadCsv(){
  const heads=["ID Tarea","Fecha","Hora","Pickero","RF Pickero","Turno","Pasillo","Ubicación","Indicación","Observación","ETV asignado","RF ETV","Estado","Estado EWM","Modo asignación","Última actualización"];
  const lines=[heads.map(csvCell).join(";")];
- tasks.forEach(t=>lines.push([
-  t.task_id,fmtDate(t.created_at),fmtTime(t.created_at),t.pickero,t.pickero_rf,t.shift,t.aisle,t.location,t.instruction,t.observation,t.etv,t.etv_rf,t.status,tclass MiniMQTT{
+ tasks.forEach(t=>lines.push([t.task_id,fmtDate(t.created_at),fmtTime(t.created_at),t.pickero,t.pickero_rf,t.shift,t.aisle,t.location,t.instruction,t.observation,t.etv,t.etv_rf,t.status,t.ewm_status,t.assignment_mode||"MANUAL",fmtFull(t.updated_at)].map(csvCell).join(";")));
+ const blob=new Blob(["\ufeff"+lines.join("\n")],{type:"text/csv;charset=utf-8"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ALICORP_Reposiciones_"+new Date().toISOString().slice(0,10)+".csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+class MiniMQTT{
 constructor(url,name,onStatus,onMessage,username="",password=""){this.url=url;this.name=name;this.onStatus=onStatus;this.onMessage=onMessage;this.username=username;this.password=password;this.ws=null;this.connected=false;this.packetId=1;this.buf=new Uint8Array(0);this.keepTimer=null;this.reTimer=null;this.closedByUser=false}
 u8(s){if(window.TextEncoder)return new TextEncoder().encode(s);const x=unescape(encodeURIComponent(s)),a=new Uint8Array(x.length);for(let i=0;i<x.length;i++)a[i]=x.charCodeAt(i);return a}
 s8(a){if(window.TextDecoder)return new TextDecoder().decode(a);let s="";for(let i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);try{return decodeURIComponent(escape(s))}catch(e){return s}}
@@ -102,13 +126,13 @@ subscribePacket(topic){this.packetId=(this.packetId%65535)+1;const pid=new Uint8
 publishPacket(topic,message,retain){const body=this.concat(this.mstr(topic),this.u8(message));return this.pack(0x30|(retain?1:0),body)}
 connect(){this.closedByUser=false;try{this.onStatus(this,false,"conectando");this.ws=new WebSocket(this.url,["mqtt"]);this.ws.binaryType="arraybuffer";this.ws.onopen=()=>{try{this.ws.send(this.connectPacket())}catch(e){this.fail("envío CONNECT")}};this.ws.onmessage=ev=>{const incoming=new Uint8Array(ev.data);this.buf=this.concat(this.buf,incoming);this.parse()};this.ws.onerror=()=>this.onStatus(this,false,"error");this.ws.onclose=()=>{this.connected=false;clearInterval(this.keepTimer);this.onStatus(this,false,"cerrado");if(!this.closedByUser){clearTimeout(this.reTimer);this.reTimer=setTimeout(()=>this.connect(),3500)}}}catch(e){this.onStatus(this,false,"bloqueado");clearTimeout(this.reTimer);this.reTimer=setTimeout(()=>this.connect(),5000)}}
 fail(msg){this.onStatus(this,false,msg);try{this.ws.close()}catch(e){}}
-parse(){while(this.buf.length>=2){let mul=1,rem=0,i=1,d;do{if(i>=this.buf.length)return;d=this.buf[i++];rem+=(d&127)*mul;mul*=128;if(mul>128*128*128*128)return this.fail("paquete inválido")}while(d&128);if(this.buf.length<i+rem)return;const h=this.buf[0],p=this.buf.slice(i,i+rem);this.buf=this.buf.slice(i+rem);const type=h>>4;if(type===2){if(p.length>=2&&p[1]===0){this.connected=true;this.onStatus(this,true,"conectado");clearInterval(this.keepTimer);this.keepTimer=setInterval(()=>{if(this.connected&&this.ws&&this.ws.readyState===1)this.ws.send(new Uint8Array([0xC0,0x00]))},20000);this.subscribe(TOPIC_STATE);this.subscribe(NOTIF_TOPIC)}else this.fail("CONNACK rechazado")}else if(type===3){if(p.length<2)continue;const len=(p[0]<<8)|p[1];if(p.length<2+len)continue;const topic=this.s8(p.slice(2,2+len)),msg=this.s8(p.slice(2+len));this.onMessage(this,topic,msg)}}}
+parse(){while(this.buf.length>=2){let mul=1,rem=0,i=1,d;do{if(i>=this.buf.length)return;d=this.buf[i++];rem+=(d&127)*mul;mul*=128;if(mul>128*128*128*128)return this.fail("paquete inválido")}while(d&128);if(this.buf.length<i+rem)return;const h=this.buf[0],p=this.buf.slice(i,i+rem);this.buf=this.buf.slice(i+rem);const type=h>>4;if(type===2){if(p.length>=2&&p[1]===0){this.connected=true;this.onStatus(this,true,"conectado");clearInterval(this.keepTimer);this.keepTimer=setInterval(()=>{if(this.connected&&this.ws&&this.ws.readyState===1)this.ws.send(new Uint8Array([0xC0,0x00]))},20000);this.subscribe(TOPIC_STATE)}else this.fail("CONNACK rechazado")}else if(type===3){if(p.length<2)continue;const len=(p[0]<<8)|p[1];if(p.length<2+len)continue;const topic=this.s8(p.slice(2,2+len)),msg=this.s8(p.slice(2+len));this.onMessage(this,topic,msg)}}}
 subscribe(topic){if(this.connected&&this.ws&&this.ws.readyState===1){try{this.ws.send(this.subscribePacket(topic))}catch(e){}}}
 publish(topic,msg,retain=false){if(!(this.connected&&this.ws&&this.ws.readyState===1))return false;try{this.ws.send(this.publishPacket(topic,msg,retain));return true}catch(e){return false}}
 }
-his.sp(TOPIC_STATE));setInterval(()=>{if(this.connected&&this.ws.readyState===1)this.ws.send(new Uint8Array([0xC0,0]))},20000)}else if(type===3){const len=(p[0]<<8)|p[1],topic=this.s8(p.slice(2,2+len)),msg=this.s8(p.slice(2+len));if(topic===TOPIC_STATE){try{const o=JSON.parse(msg),r=Number(o.rev||0);if(r>=rev){rev=r;tasks=Array.isArray(o.tasks)?o.tasks:[];render()}}catch(e){}}}}}
-}
-brokers=BROKERS.map(([n,u,user,pass])=>new MiniMQTT(u,n,brokerStatus,brokerMessage,user,pass));brokers.forEach(b=>b.connect());render();
+
+render();
+startBrokers();
 </script>
 </body>
 </html>
