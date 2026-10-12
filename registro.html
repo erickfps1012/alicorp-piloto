@@ -43,15 +43,16 @@ h1{margin:0;font-size:20px}.sub{font-size:12px;opacity:.9;margin-top:3px}.wrap{m
 </div>
 </div>
 </div>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <script>
 const ROLE="registro"; const NOTIF_TOPIC="alicorp/piloto/33cda81c433f09c0aa4b479f/notif/registro";
 const BASE="alicorp/piloto/33cda81c433f09c0aa4b479f";
 const TOPIC_STATE=BASE+"/state";
-const BROKERS=[["Shiftr","wss://public.cloud.shiftr.io","public","public"],["EMQX","wss://broker.emqx.io:8084/mqtt","",""],["Mosquitto","wss://test.mosquitto.org:8081/mqtt","",""]];
+const BROKERS=[["Shiftr","wss://public:public@public.cloud.shiftr.io","public","public"]];
 let tasks=[],rev=0,brokers=[],statusMap={};
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function connectedCount(){return brokers.filter(b=>b.connected).length}
-function updateConn(){const n=connectedCount(),e=document.getElementById("conn");e.textContent=n?"Internet conectado ("+n+"/"+BROKERS.length+")":"Conectando...";e.className=n?"conn ok":"conn"}
+function updateConn(){const n=connectedCount(),e=document.getElementById("conn");e.textContent=n?"Servidor conectado:"Conectando...";e.className=n?"conn ok":"conn"}
 function brokerStatus(b,ok,msg){statusMap[b.name]=msg;updateConn();const d=document.getElementById("diag");if(d)d.textContent=Object.entries(statusMap).map(([k,v])=>k+": "+v).join(" · ")}
 function brokerMessage(b,topic,msg){
  if(topic!==TOPIC_STATE)return;
@@ -108,7 +109,50 @@ publish(topic,msg,retain=false){if(!(this.connected&&this.ws&&this.ws.readyState
 }
 his.sp(TOPIC_STATE));setInterval(()=>{if(this.connected&&this.ws.readyState===1)this.ws.send(new Uint8Array([0xC0,0]))},20000)}else if(type===3){const len=(p[0]<<8)|p[1],topic=this.s8(p.slice(2,2+len)),msg=this.s8(p.slice(2+len));if(topic===TOPIC_STATE){try{const o=JSON.parse(msg),r=Number(o.rev||0);if(r>=rev){rev=r;tasks=Array.isArray(o.tasks)?o.tasks:[];render()}}catch(e){}}}}}
 }
-brokers=BROKERS.map(([n,u,user,pass])=>new MiniMQTT(u,n,brokerStatus,brokerMessage,user,pass));brokers.forEach(b=>b.connect());render();
+
+function startBrokersMQTTJS(){
+  if(typeof mqtt==="undefined"){
+    const el=document.getElementById("conn");
+    if(el){el.textContent="No se pudo cargar conexión";el.className="conn";}
+    return;
+  }
+  const wrapper={
+    name:"Shiftr",
+    connected:false,
+    client:null,
+    publish(topic,message,retain=false){
+      if(!(this.client&&this.connected))return false;
+      try{this.client.publish(topic,message,{qos:0,retain:!!retain});return true}catch(e){return false}
+    }
+  };
+  brokers=[wrapper];
+  statusMap={Shiftr:"conectando"};
+  updateConn();
+  const client=mqtt.connect("wss://public:public@public.cloud.shiftr.io",{
+    username:"public",
+    password:"public",
+    clientId:"alicorp_"+ROLE+"_"+Math.random().toString(16).slice(2,10),
+    clean:true,
+    connectTimeout:10000,
+    reconnectPeriod:3000,
+    keepalive:30
+  });
+  wrapper.client=client;
+  client.on("connect",()=>{
+    wrapper.connected=true;
+    statusMap.Shiftr="conectado";
+    updateConn();
+    try{client.subscribe(TOPIC_STATE,{qos:0})}catch(e){}
+    try{if(typeof NOTIF_TOPIC!=="undefined"&&NOTIF_TOPIC)client.subscribe(NOTIF_TOPIC,{qos:0})}catch(e){}
+  });
+  client.on("message",(topic,message)=>brokerMessage(wrapper,topic,message.toString()));
+  client.on("reconnect",()=>{wrapper.connected=false;statusMap.Shiftr="reconectando";updateConn()});
+  client.on("offline",()=>{wrapper.connected=false;statusMap.Shiftr="sin conexión al servidor";updateConn()});
+  client.on("close",()=>{wrapper.connected=false;statusMap.Shiftr="cerrado";updateConn()});
+  client.on("error",()=>{wrapper.connected=false;statusMap.Shiftr="error";updateConn()});
+}
+
+startBrokersMQTTJS();render();
 </script>
 </body>
 </html>
