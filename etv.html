@@ -66,7 +66,7 @@ const TOPIC_STATE=BASE+"/state";
 const TOPIC_NOTIF_PICK=BASE+"/notif/pickero";
 const TOPIC_NOTIF_JUNIOR=BASE+"/notif/junior";
 const TOPIC_NOTIF_SUP=BASE+"/notif/supervisor";
-const BROKERS=[["EMQX","wss://broker.emqx.io:8084/mqtt"],["Mosquitto","wss://test.mosquitto.org:8081/mqtt"]];
+const BROKERS=[["Shiftr","wss://public.cloud.shiftr.io","public","public"],["EMQX","wss://broker.emqx.io:8084/mqtt","",""],["Mosquitto","wss://test.mosquitto.org:8081/mqtt","",""]];
 const ETWS=[{rf:"AAREVALO",name:"Álex Arévalo"},{rf:"RGUAMAN",name:"Roberto Guamán"},{rf:"LUNA",name:"Luna"},{rf:"RUFASTO",name:"Rufasto"},{rf:"JROJAS",name:"Junior Rojas"},{rf:"JLLERENA",name:"Junior Llerena"}];
 const STATES=["Pendiente","Tomada","En camino","En ubicación","Reposición realizada","Finalizada"];
 const ETV_USERS=[
@@ -86,24 +86,24 @@ function instrClass(s){s=String(s||"").toLowerCase();return s.includes("dejar")?
 function now(){return new Date().toISOString()}
 function toast(m){const t=document.getElementById("toast");if(t){t.textContent=m;t.style.display="block";setTimeout(()=>t.style.display="none",3800)}}
 function connectedCount(){return brokers.filter(b=>b.connected).length}
-function updateConn(){const n=connectedCount(),c=document.getElementById("conn"),d=document.getElementById("diag");if(c){if(n>0){c.textContent="Internet conectado ("+n+"/2)";c.className="conn ok"}else{c.textContent="Conectando...";c.className="conn"}}if(d)d.textContent=Object.entries(statusMap).map(([k,v])=>k+": "+v).join(" · ")}
+function updateConn(){const n=connectedCount(),c=document.getElementById("conn"),d=document.getElementById("diag");if(c){if(n>0){c.textContent="Internet conectado ("+n+"/"+BROKERS.length+")";c.className="conn ok"}else{c.textContent="Conectando...";c.className="conn"}}if(d)d.textContent=Object.entries(statusMap).map(([k,v])=>k+": "+v).join(" · ")}
 function brokerStatus(b,ok,msg){statusMap[b.name]=msg;updateConn()}
 function browserNotify(title,body){if("Notification"in window&&Notification.permission==="granted"){try{new Notification(title,{body})}catch(e){}}}
 async function askNotify(){if("Notification"in window){const p=await Notification.requestPermission();toast(p==="granted"?"Avisos activados":"Las alertas internas seguirán funcionando")}}
 function publishAll(topic,message,retain=false){let ok=0;brokers.forEach(b=>{if(b.publish(topic,message,retain))ok++});return ok>0}
-function publishState(){rev=Date.now();const payload=JSON.stringify({rev,tasks,updated_at:now()});if(!publishAll(TOPIC_STATE,payload,true)){toast("No hay conexión disponible.");return false}return true}
+function publishState(){rev=Date.now();const payload=JSON.stringify({rev,tasks,updated_at:now()});if(!publishAll(TOPIC_STATE,payload,true)){toast("No hay conexión con el servidor todavía.");return false}return true}
 function publishNotif(topic,message){publishAll(topic,JSON.stringify({message,time:now()}),false)}
 function brokerMessage(b,topic,msg){try{const obj=JSON.parse(msg);if(topic===TOPIC_STATE){const incomingRev=Number(obj.rev||0);if(incomingRev>rev){rev=incomingRev;tasks=Array.isArray(obj.tasks)?obj.tasks:[];ready=true;render();brokers.forEach(other=>{if(other!==b&&other.connected)other.publish(TOPIC_STATE,JSON.stringify({rev,tasks,updated_at:obj.updated_at||now()}),true)})}}else if(topic===NOTIF_TOPIC){toast(obj.message||"Nueva actualización");browserNotify("ALICORP",obj.message||"Nueva actualización")}}catch(e){}}
-function startBrokers(){statusMap={};brokers=BROKERS.map(([name,url])=>new MiniMQTT(url,name,brokerStatus,brokerMessage));brokers.forEach(b=>b.connect());setTimeout(()=>{if(!ready){ready=true;render()}},3500);setTimeout(()=>{if(connectedCount()===0){const c=document.getElementById("conn");if(c)c.textContent="No conecta · abre en Chrome/Safari";toast("El navegador del celular está bloqueando la conexión.")}},14000)}
+function startBrokers(){statusMap={};brokers=BROKERS.map(([name,url,user,pass])=>new MiniMQTT(url,name,brokerStatus,brokerMessage,user,pass));brokers.forEach(b=>b.connect());setTimeout(()=>{if(!ready){ready=true;render()}},3500);setTimeout(()=>{if(connectedCount()===0){const c=document.getElementById("conn");if(c)c.textContent="No conecta · abre en Chrome/Safari";toast("El navegador del celular está bloqueando la conexión.")}},14000)}
 class MiniMQTT{
-constructor(url,name,onStatus,onMessage){this.url=url;this.name=name;this.onStatus=onStatus;this.onMessage=onMessage;this.ws=null;this.connected=false;this.packetId=1;this.buf=new Uint8Array(0);this.keepTimer=null;this.reTimer=null;this.closedByUser=false}
+constructor(url,name,onStatus,onMessage,username="",password=""){this.url=url;this.name=name;this.onStatus=onStatus;this.onMessage=onMessage;this.username=username;this.password=password;this.ws=null;this.connected=false;this.packetId=1;this.buf=new Uint8Array(0);this.keepTimer=null;this.reTimer=null;this.closedByUser=false}
 u8(s){if(window.TextEncoder)return new TextEncoder().encode(s);const x=unescape(encodeURIComponent(s)),a=new Uint8Array(x.length);for(let i=0;i<x.length;i++)a[i]=x.charCodeAt(i);return a}
 s8(a){if(window.TextDecoder)return new TextDecoder().decode(a);let s="";for(let i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);try{return decodeURIComponent(escape(s))}catch(e){return s}}
 mstr(s){const b=this.u8(s),o=new Uint8Array(2+b.length);o[0]=(b.length>>8)&255;o[1]=b.length&255;o.set(b,2);return o}
 concat(...arrs){let n=0;arrs.forEach(a=>n+=a.length);const o=new Uint8Array(n);let p=0;arrs.forEach(a=>{o.set(a,p);p+=a.length});return o}
 rem(n){const a=[];do{let d=n%128;n=Math.floor(n/128);if(n>0)d|=128;a.push(d)}while(n>0);return new Uint8Array(a)}
 pack(h,payload){return this.concat(new Uint8Array([h]),this.rem(payload.length),payload)}
-connectPacket(){const proto=this.mstr("MQTT"),vh=this.concat(proto,new Uint8Array([4,2,0,30])),cid=this.mstr("alicorp_"+ROLE+"_"+Math.random().toString(16).slice(2,10));return this.pack(0x10,this.concat(vh,cid))}
+connectPacket(){const proto=this.mstr("MQTT"),hasAuth=!!this.username,flags=hasAuth?194:2,vh=this.concat(proto,new Uint8Array([4,flags,0,30])),cid=this.mstr("alicorp_"+ROLE+"_"+Math.random().toString(16).slice(2,10)),auth=hasAuth?this.concat(this.mstr(this.username),this.mstr(this.password||"")):new Uint8Array(0);return this.pack(0x10,this.concat(vh,cid,auth))}
 subscribePacket(topic){this.packetId=(this.packetId%65535)+1;const pid=new Uint8Array([(this.packetId>>8)&255,this.packetId&255]),body=this.concat(pid,this.mstr(topic),new Uint8Array([0]));return this.pack(0x82,body)}
 publishPacket(topic,message,retain){const body=this.concat(this.mstr(topic),this.u8(message));return this.pack(0x30|(retain?1:0),body)}
 connect(){this.closedByUser=false;try{this.onStatus(this,false,"conectando");this.ws=new WebSocket(this.url,["mqtt"]);this.ws.binaryType="arraybuffer";this.ws.onopen=()=>{try{this.ws.send(this.connectPacket())}catch(e){this.fail("envío CONNECT")}};this.ws.onmessage=ev=>{const incoming=new Uint8Array(ev.data);this.buf=this.concat(this.buf,incoming);this.parse()};this.ws.onerror=()=>this.onStatus(this,false,"error");this.ws.onclose=()=>{this.connected=false;clearInterval(this.keepTimer);this.onStatus(this,false,"cerrado");if(!this.closedByUser){clearTimeout(this.reTimer);this.reTimer=setTimeout(()=>this.connect(),3500)}}}catch(e){this.onStatus(this,false,"bloqueado");clearTimeout(this.reTimer);this.reTimer=setTimeout(()=>this.connect(),5000)}}
