@@ -47,11 +47,11 @@ h1{margin:0;font-size:20px}.sub{font-size:12px;opacity:.9;margin-top:3px}.wrap{m
 const ROLE="registro"; const NOTIF_TOPIC="alicorp/piloto/33cda81c433f09c0aa4b479f/notif/registro";
 const BASE="alicorp/piloto/33cda81c433f09c0aa4b479f";
 const TOPIC_STATE=BASE+"/state";
-const BROKERS=[["EMQX","wss://broker.emqx.io:8084/mqtt"],["Mosquitto","wss://test.mosquitto.org:8081/mqtt"]];
+const BROKERS=[["Shiftr","wss://public.cloud.shiftr.io","public","public"],["EMQX","wss://broker.emqx.io:8084/mqtt","",""],["Mosquitto","wss://test.mosquitto.org:8081/mqtt","",""]];
 let tasks=[],rev=0,brokers=[],statusMap={};
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function connectedCount(){return brokers.filter(b=>b.connected).length}
-function updateConn(){const n=connectedCount(),e=document.getElementById("conn");e.textContent=n?"Internet conectado ("+n+"/2)":"Conectando...";e.className=n?"conn ok":"conn"}
+function updateConn(){const n=connectedCount(),e=document.getElementById("conn");e.textContent=n?"Internet conectado ("+n+"/"+BROKERS.length+")":"Conectando...";e.className=n?"conn ok":"conn"}
 function brokerStatus(b,ok,msg){statusMap[b.name]=msg;updateConn();const d=document.getElementById("diag");if(d)d.textContent=Object.entries(statusMap).map(([k,v])=>k+": "+v).join(" · ")}
 function brokerMessage(b,topic,msg){
  if(topic!==TOPIC_STATE)return;
@@ -90,14 +90,14 @@ function downloadCsv(){
  const lines=[heads.map(csvCell).join(";")];
  tasks.forEach(t=>lines.push([
   t.task_id,fmtDate(t.created_at),fmtTime(t.created_at),t.pickero,t.pickero_rf,t.shift,t.aisle,t.location,t.instruction,t.observation,t.etv,t.etv_rf,t.status,tclass MiniMQTT{
-constructor(url,name,onStatus,onMessage){this.url=url;this.name=name;this.onStatus=onStatus;this.onMessage=onMessage;this.ws=null;this.connected=false;this.packetId=1;this.buf=new Uint8Array(0);this.keepTimer=null;this.reTimer=null;this.closedByUser=false}
+constructor(url,name,onStatus,onMessage,username="",password=""){this.url=url;this.name=name;this.onStatus=onStatus;this.onMessage=onMessage;this.username=username;this.password=password;this.ws=null;this.connected=false;this.packetId=1;this.buf=new Uint8Array(0);this.keepTimer=null;this.reTimer=null;this.closedByUser=false}
 u8(s){if(window.TextEncoder)return new TextEncoder().encode(s);const x=unescape(encodeURIComponent(s)),a=new Uint8Array(x.length);for(let i=0;i<x.length;i++)a[i]=x.charCodeAt(i);return a}
 s8(a){if(window.TextDecoder)return new TextDecoder().decode(a);let s="";for(let i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);try{return decodeURIComponent(escape(s))}catch(e){return s}}
 mstr(s){const b=this.u8(s),o=new Uint8Array(2+b.length);o[0]=(b.length>>8)&255;o[1]=b.length&255;o.set(b,2);return o}
 concat(...arrs){let n=0;arrs.forEach(a=>n+=a.length);const o=new Uint8Array(n);let p=0;arrs.forEach(a=>{o.set(a,p);p+=a.length});return o}
 rem(n){const a=[];do{let d=n%128;n=Math.floor(n/128);if(n>0)d|=128;a.push(d)}while(n>0);return new Uint8Array(a)}
 pack(h,payload){return this.concat(new Uint8Array([h]),this.rem(payload.length),payload)}
-connectPacket(){const proto=this.mstr("MQTT"),vh=this.concat(proto,new Uint8Array([4,2,0,30])),cid=this.mstr("alicorp_"+ROLE+"_"+Math.random().toString(16).slice(2,10));return this.pack(0x10,this.concat(vh,cid))}
+connectPacket(){const proto=this.mstr("MQTT"),hasAuth=!!this.username,flags=hasAuth?194:2,vh=this.concat(proto,new Uint8Array([4,flags,0,30])),cid=this.mstr("alicorp_"+ROLE+"_"+Math.random().toString(16).slice(2,10)),auth=hasAuth?this.concat(this.mstr(this.username),this.mstr(this.password||"")):new Uint8Array(0);return this.pack(0x10,this.concat(vh,cid,auth))}
 subscribePacket(topic){this.packetId=(this.packetId%65535)+1;const pid=new Uint8Array([(this.packetId>>8)&255,this.packetId&255]),body=this.concat(pid,this.mstr(topic),new Uint8Array([0]));return this.pack(0x82,body)}
 publishPacket(topic,message,retain){const body=this.concat(this.mstr(topic),this.u8(message));return this.pack(0x30|(retain?1:0),body)}
 connect(){this.closedByUser=false;try{this.onStatus(this,false,"conectando");this.ws=new WebSocket(this.url,["mqtt"]);this.ws.binaryType="arraybuffer";this.ws.onopen=()=>{try{this.ws.send(this.connectPacket())}catch(e){this.fail("envío CONNECT")}};this.ws.onmessage=ev=>{const incoming=new Uint8Array(ev.data);this.buf=this.concat(this.buf,incoming);this.parse()};this.ws.onerror=()=>this.onStatus(this,false,"error");this.ws.onclose=()=>{this.connected=false;clearInterval(this.keepTimer);this.onStatus(this,false,"cerrado");if(!this.closedByUser){clearTimeout(this.reTimer);this.reTimer=setTimeout(()=>this.connect(),3500)}}}catch(e){this.onStatus(this,false,"bloqueado");clearTimeout(this.reTimer);this.reTimer=setTimeout(()=>this.connect(),5000)}}
@@ -108,7 +108,7 @@ publish(topic,msg,retain=false){if(!(this.connected&&this.ws&&this.ws.readyState
 }
 his.sp(TOPIC_STATE));setInterval(()=>{if(this.connected&&this.ws.readyState===1)this.ws.send(new Uint8Array([0xC0,0]))},20000)}else if(type===3){const len=(p[0]<<8)|p[1],topic=this.s8(p.slice(2,2+len)),msg=this.s8(p.slice(2+len));if(topic===TOPIC_STATE){try{const o=JSON.parse(msg),r=Number(o.rev||0);if(r>=rev){rev=r;tasks=Array.isArray(o.tasks)?o.tasks:[];render()}}catch(e){}}}}}
 }
-brokers=BROKERS.map(([n,u])=>new MiniMQTT(u,n,brokerStatus,brokerMessage));brokers.forEach(b=>b.connect());render();
+brokers=BROKERS.map(([n,u,user,pass])=>new MiniMQTT(u,n,brokerStatus,brokerMessage,user,pass));brokers.forEach(b=>b.connect());render();
 </script>
 </body>
 </html>
